@@ -1,0 +1,29 @@
+{
+  "equity": {
+    "availableMargin": 185634.80,
+    "usedMargin": 0,
+    "availableCash": 185634.80,
+    "openingBalance": 185634.80,
+    "payin": 0,
+    "payout": 0,
+    "span": 0,
+    "deliveryMargin": 0,
+    "exposure": 0,
+    "optionsPremium": 0,
+    "collateralLiquidFunds": 0,
+    "collateralEquity": 0,
+    "totalCollateral": 0
+  },
+  "commodity": {
+    "availableMargin": 0,
+    "usedMargin": 0,
+    "availableCash": 0,
+    "openingBalance": 0,
+    "payin": 0,
+    "payout": 0,
+    "span": 0,
+    "deliveryMargin": 0,
+    "exposure": 0,
+    "optionsPremium": 0
+  }
+}

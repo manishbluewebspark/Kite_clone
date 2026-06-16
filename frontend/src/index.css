@@ -1,0 +1,580 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+
+body {
+   font-family: 'Manrope', sans-serif;
+   background-color: var(--bg-body);
+}
+
+
+/* 🔥 Hide scrollbar everywhere */
+* {
+   -ms-overflow-style: none;
+   scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+   display: none;
+}
+
+html,
+body {
+   margin: 0;
+   padding: 0;
+   height: 100%;
+   overflow: hidden;
+}
+
+#root {
+   height: 100%;
+   overflow: hidden;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+   display: none;
+}
+
+.no-scrollbar {
+   -ms-overflow-style: none;
+   scrollbar-width: none;
+}
+
+:root {
+   /* ── Brand Colors ── */
+   --color-primary: #081021;
+   --color-primary-light: #0e192f;
+   --color-accent: #1F76CE;
+   --colory-secondary: #4b5563;
+
+   /* ── Blue Palette ── */
+   --color-blue: #3b82f6;
+   /* blue-500 */
+   --color-blue-dark: #2563eb;
+   /* blue-600 */
+   --color-blue-muted: #60a5fa;
+   /* blue-400 */
+   --color-blue-soft: rgba(59, 130, 246, 0.20);
+   /* blue-500 / 20% */
+
+   /* ── Yellow Palette ── */
+   --color-yellow: #eab308;
+   /* yellow-500 */
+   --color-yellow-muted: #facc15;
+   /* yellow-400 */
+   --color-yellow-soft: rgba(234, 179, 8, 0.20);
+   /* yellow-500 / 20% */
+
+   /* ── Accent Overlay ── */
+   --color-accent-soft: rgba(25, 118, 210, 0.20);
+   /* accent / 20% */
+
+   /* ── Text ── */
+   --text-primary: #000000;
+   --text-secondary: #ffffff;
+   --text-body: #7c8798;
+   --text-danger: #ef4444;
+   --text-danger-muted: #f87171;
+   --text-slate-primary: #d1d5db;
+   --text-slate-secondary: #9ca3af;
+
+   /* ── On-Dark Text (white + opacity variants) ── */
+   --text-on-dark: #ffffff;
+   --text-on-dark-80: rgba(255, 255, 255, 0.80);
+   --text-on-dark-55: rgba(255, 255, 255, 0.55);
+   --text-on-dark-50: rgba(255, 255, 255, 0.50);
+   --text-on-dark-45: rgba(255, 255, 255, 0.45);
+   --text-on-dark-40: rgba(255, 255, 255, 0.40);
+
+   /* ── Overlay Backgrounds (white + opacity) ── */
+   --bg-overlay-20: rgba(255, 255, 255, 0.20);
+   --bg-overlay-15: rgba(255, 255, 255, 0.15);
+   --bg-overlay-13: rgba(255, 255, 255, 0.13);
+   --bg-overlay-10: rgba(255, 255, 255, 0.10);
+   --bg-overlay-08: rgba(255, 255, 255, 0.08);
+
+   /* ── Overlay Borders ── */
+   --border-overlay-30: rgba(255, 255, 255, 0.30);
+   --border-overlay-25: rgba(255, 255, 255, 0.25);
+   --border-overlay-20: rgba(255, 255, 255, 0.20);
+   --border-overlay-15: rgba(255, 255, 255, 0.15);
+   --border-overlay-12: rgba(255, 255, 255, 0.12);
+
+   /* ── Surface / UI Colors ── */
+   --bg-surface: #ffffff;
+   --bg-separator: #f3f4f6;
+   --bg-notification: #fb923c;
+   --bg-danger-soft: #fef2f2;
+   --bg-danger: #ef4444;
+   --bg-accent-soft: #eff6ff;
+
+   /* ── Body Background ── */
+   --bg-body: var(--color-primary);
+}
+
+/* ════════════════════════════════════════
+   BRAND
+════════════════════════════════════════ */
+.bg-primary {
+   background-color: var(--color-primary);
+}
+
+.bg-primary-light {
+   background-color: var(--color-primary-light);
+}
+
+
+.text-slate-primary {
+   color: var(--text-state-primary);
+}
+
+.text-slate-secondary {
+   color: var(--text-slate-secondary);
+}
+
+
+.text-primary {
+   color: var(--color-primary);
+}
+
+.text-primary-light {
+   color: var(--color-primary-light);
+}
+
+.text-secondary {
+   color: var(--text-secondary);
+}
+
+.border-secondary {
+   border-color: var(--colory-secondary);
+}
+
+.border-primary-light {
+   border-color: var(--color-primary-light);
+}
+
+.hover\:bg-primary:hover {
+   background-color: var(--color-primary);
+}
+
+.hover\:bg-primary-light:hover {
+   background-color: var(--color-primary-light);
+}
+
+.hover\:text-primary:hover {
+   color: var(--color-primary);
+}
+
+.hover\:text-primary-light:hover {
+   color: var(--color-primary-light);
+}
+
+.hover\:text-secondary:hover {
+   color: var(--text-secondary);
+}
+
+/* ════════════════════════════════════════
+   ACCENT
+════════════════════════════════════════ */
+.text-accent {
+   color: var(--color-accent);
+}
+
+.bg-accent {
+   background-color: var(--color-accent);
+}
+
+.bg-accent-overlay {
+   background-color: var(--color-accent-soft);
+}
+
+/* accent 20% */
+.hover\:bg-accent:hover {
+   background-color: var(--color-accent);
+}
+
+.hover\:text-accent:hover {
+   color: var(--color-accent);
+}
+
+/* ════════════════════════════════════════
+   BLUE PALETTE
+════════════════════════════════════════ */
+.text-blue {
+   color: var(--color-blue);
+}
+
+.text-blue-dark {
+   color: var(--color-blue-dark);
+}
+
+.text-blue-muted {
+   color: var(--color-blue-muted);
+}
+
+.bg-blue {
+   background-color: var(--color-blue);
+}
+
+.bg-blue-soft {
+   background-color: var(--color-blue-soft);
+}
+
+/* blue 20% */
+.hover\:text-blue:hover {
+   color: var(--color-blue);
+}
+
+.hover\:bg-blue:hover {
+   background-color: var(--color-blue);
+}
+
+/* ════════════════════════════════════════
+   YELLOW PALETTE
+════════════════════════════════════════ */
+.text-yellow {
+   color: var(--color-yellow);
+}
+
+.text-yellow-muted {
+   color: var(--color-yellow-muted);
+}
+
+.bg-yellow {
+   background-color: var(--color-yellow);
+}
+
+.bg-yellow-soft {
+   background-color: var(--color-yellow-soft);
+}
+
+/* yellow 20% */
+.hover\:text-yellow:hover {
+   color: var(--color-yellow);
+}
+
+.hover\:bg-yellow:hover {
+   background-color: var(--color-yellow);
+}
+
+/* ════════════════════════════════════════
+   TEXT
+════════════════════════════════════════ */
+.text-on-dark {
+   color: var(--text-on-dark);
+}
+
+.text-on-dark-80 {
+   color: var(--text-on-dark-80);
+}
+
+.text-on-dark-55 {
+   color: var(--text-on-dark-55);
+}
+
+.text-on-dark-50 {
+   color: var(--text-on-dark-50);
+}
+
+.text-on-dark-45 {
+   color: var(--text-on-dark-45);
+}
+
+.text-on-dark-40 {
+   color: var(--text-on-dark-40);
+}
+
+.text-body {
+   color: var(--text-body);
+}
+
+.text-danger {
+   color: var(--text-danger);
+}
+
+.text-danger-muted {
+   color: var(--text-danger-muted);
+}
+
+.hover\:text-danger:hover {
+   color: var(--text-danger);
+}
+
+/* ════════════════════════════════════════
+   OVERLAY BACKGROUNDS
+════════════════════════════════════════ */
+.bg-overlay-20 {
+   background-color: var(--bg-overlay-20);
+}
+
+.bg-overlay-15 {
+   background-color: var(--bg-overlay-15);
+}
+
+.bg-overlay-13 {
+   background-color: var(--bg-overlay-13);
+}
+
+.bg-overlay-10 {
+   background-color: var(--bg-overlay-10);
+}
+
+.bg-overlay-08 {
+   background-color: var(--bg-overlay-08);
+}
+
+.hover\:bg-overlay-20:hover {
+   background-color: var(--bg-overlay-20);
+}
+
+.hover\:bg-overlay-15:hover {
+   background-color: var(--bg-overlay-15);
+}
+
+.hover\:bg-overlay-13:hover {
+   background-color: var(--bg-overlay-13);
+}
+
+.hover\:bg-overlay-10:hover {
+   background-color: var(--bg-overlay-10);
+}
+
+/* ════════════════════════════════════════
+   OVERLAY BORDERS
+════════════════════════════════════════ */
+.border-overlay-30 {
+   border-color: var(--border-overlay-30);
+}
+
+.border-overlay-25 {
+   border-color: var(--border-overlay-25);
+}
+
+.border-overlay-20 {
+   border-color: var(--border-overlay-20);
+}
+
+.border-overlay-15 {
+   border-color: var(--border-overlay-15);
+}
+
+.border-overlay-12 {
+   border-color: var(--border-overlay-12);
+}
+
+.hover\:border-overlay-30:hover {
+   border-color: var(--border-overlay-30);
+}
+
+.hover\:border-overlay-25:hover {
+   border-color: var(--border-overlay-25);
+}
+
+/* ════════════════════════════════════════
+   SURFACE / UI
+════════════════════════════════════════ */
+.bg-surface {
+   background-color: var(--bg-surface);
+}
+
+.bg-separator {
+   background-color: var(--bg-separator);
+}
+
+.bg-notification {
+   background-color: var(--bg-notification);
+}
+
+.bg-danger-soft {
+   background-color: var(--bg-danger-soft);
+}
+
+.bg-danger {
+   background-color: var(--bg-danger);
+}
+
+.bg-accent-soft {
+   background-color: var(--bg-accent-soft);
+}
+
+.hover\:bg-danger-soft:hover {
+   background-color: var(--bg-danger-soft);
+}
+
+.hover\:bg-danger:hover {
+   background-color: var(--bg-danger);
+}
+
+.hover\:bg-accent-soft:hover {
+   background-color: var(--bg-accent-soft);
+}
+
+/* ================================================================================== */
+/* ════════════════════════════════════════
+   LIGHT MODE THEME (data-theme="light")
+════════════════════════════════════════ */
+[data-theme="light"] {
+   /* ── Brand Colors (bg same dark rakhein, sirf accent orange) ── */
+   --color-primary: #ffffff;
+   --color-primary-light: #f3f4f6;
+   --color-accent: #ea580c;
+   --colory-secondary: #6b7280;
+
+   /* ── Blue Palette ── */
+   --color-blue: #3b82f6;
+   --color-blue-dark: #2563eb;
+   --color-blue-muted: #60a5fa;
+   --color-blue-soft: rgba(59, 130, 246, 0.15);
+
+   /* ── Yellow Palette ── */
+   --color-yellow: #eab308;
+   --color-yellow-muted: #facc15;
+   --color-yellow-soft: rgba(234, 179, 8, 0.15);
+
+   /* ── Accent Overlay (orange tint) ── */
+   --color-accent-soft: rgba(234, 88, 12, 0.10);
+
+   /* ── Text ── */
+   --text-primary: #ea580c;
+   --text-secondary: #1f2937;
+   --text-body: #6b7280;
+   --text-danger: #dc2626;
+   --text-danger-muted: #ef4444;
+   --text-slate-primary: #374151;
+   --text-slate-secondary: #6b7280;
+
+   /* ── On-Dark Text ── */
+   --text-on-dark: #1f2937;
+   --text-on-dark-80: rgba(31, 41, 55, 0.80);
+   --text-on-dark-55: rgba(31, 41, 55, 0.55);
+   --text-on-dark-50: rgba(31, 41, 55, 0.50);
+   --text-on-dark-45: rgba(31, 41, 55, 0.45);
+   --text-on-dark-40: rgba(31, 41, 55, 0.40);
+
+   /* ── Overlay Backgrounds ── */
+   --bg-overlay-20: rgba(0, 0, 0, 0.10);
+   --bg-overlay-15: rgba(0, 0, 0, 0.07);
+   --bg-overlay-13: rgba(0, 0, 0, 0.06);
+   --bg-overlay-10: rgba(0, 0, 0, 0.05);
+   --bg-overlay-08: rgba(0, 0, 0, 0.04);
+
+   /* ── Overlay Borders ── */
+   --border-overlay-30: rgba(0, 0, 0, 0.18);
+   --border-overlay-25: rgba(0, 0, 0, 0.14);
+   --border-overlay-20: rgba(0, 0, 0, 0.10);
+   --border-overlay-15: rgba(0, 0, 0, 0.08);
+   --border-overlay-12: rgba(0, 0, 0, 0.06);
+
+   /* ── Surface / UI Colors ── */
+   --bg-surface: #ffffff;
+   --bg-separator: #e5e7eb;
+   --bg-notification: #ea580c;
+   --bg-danger-soft: #fef2f2;
+   --bg-danger: #dc2626;
+   --bg-accent-soft: #fff1e8;
+
+   /* ── Body Background (gray instead of white) ── */
+   --bg-body: #e5e7eb;
+}
+
+/* ================================================================================== */
+
+.btn-global {
+   display: flex;
+   align-items: center;
+   background-color: #1f2937;
+   /* bg-gray-800 */
+   border: 1px solid #4b5563;
+   /* border-gray-600 */
+   padding: 0.4rem 0.75rem;
+   /* py-2 px-3 */
+   border-radius: 0.375rem;
+   /* rounded */
+   font-size: 0.875rem;
+   /* text-sm */
+   color: #ffffff;
+   /* default text color */
+   cursor: pointer;
+   transition: background-color 0.2s ease;
+}
+
+.btn-global:hover {
+   background-color: #374151;
+   /* hover:bg-gray-700 */
+}
+
+
+
+
+/* Grid container */
+.ag-theme-quartz-dark {
+   --ag-background-color: #0d1117;
+   --ag-header-background-color: #111820;
+   --ag-odd-row-background-color: #0f1620;
+   --ag-row-hover-color: #141d28;
+   --ag-border-color: #1e2733;
+   --ag-row-border-color: #1a2230;
+   --ag-font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+   --ag-font-size: 13px;
+   --ag-cell-horizontal-padding: 24px;
+   --ag-header-height: 52px;
+   --ag-row-height: 52px;
+   --ag-foreground-color: #94a3b8;
+   --ag-header-foreground-color: #94a3b8;
+   --ag-selected-row-background-color: #1a2535;
+   --ag-range-selection-border-color: #3b82f6;
+   --ag-checkbox-checked-color: #3b82f6;
+   --ag-icon-color: #64748b;
+   --ag-secondary-foreground-color: #64748b;
+   --ag-input-focus-border-color: #3b82f6;
+   border-radius: 12px;
+   overflow: hidden;
+   border: 1px solid #1e2733;
+}
+
+/* Header text */
+.ag-theme-quartz-dark .ag-header-cell-text {
+   font-size: 11px;
+   font-weight: 700;
+   letter-spacing: 0.12em;
+   text-transform: uppercase;
+   color: #94a3b8;
+}
+
+/* Header hover */
+.ag-theme-quartz-dark .ag-header-cell:hover .ag-header-cell-text {
+   color: #fff;
+}
+
+/* Sort icon colour */
+.ag-theme-quartz-dark .ag-sort-indicator-icon {
+   color: #64748b;
+}
+
+.ag-theme-quartz-dark .ag-header-active .ag-sort-indicator-icon {
+   color: #fff;
+}
+
+/* Remove default AG cell border flash */
+.ag-theme-quartz-dark .ag-cell-focus:not(.ag-cell-range-selected):focus-within {
+   border-color: transparent !important;
+   outline: none !important;
+}
+
+/* Scrollbar */
+.ag-theme-quartz-dark ::-webkit-scrollbar {
+   width: 6px;
+   height: 6px;
+}
+
+.ag-theme-quartz-dark ::-webkit-scrollbar-track {
+   background: #0d1117;
+}
+
+.ag-theme-quartz-dark ::-webkit-scrollbar-thumb {
+   background: #1e2733;
+   border-radius: 4px;
+}
+
+.ag-theme-quartz-dark ::-webkit-scrollbar-thumb:hover {
+   background: #2d3f55;
+}

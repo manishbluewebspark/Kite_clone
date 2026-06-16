@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "type": "TAKEOVER",
+    "symbol": "RBA",
+    "startsAt": "Mon, 08 Jun 2026, 14:20",
+    "endsOn": "Fri, 19 Jun 2026, 13:00",
+    "offerPrice": 70.39
+  },
+  {
+    "id": 2,
+    "type": "TAKEOVER",
+    "symbol": "SRDAPRT",
+    "startsAt": "Thu, 11 Jun 2026, 08:10",
+    "endsOn": "Wed, 24 Jun 2026, 13:00",
+    "offerPrice": 115.00
+  },
+  {
+    "id": 3,
+    "type": "BUYBACK",
+    "symbol": "WIPRO",
+    "startsAt": "Thu, 11 Jun 2026, 08:00",
+    "endsOn": "Tue, 16 Jun 2026, 18:00",
+    "offerPrice": 250.00
+  }
+]

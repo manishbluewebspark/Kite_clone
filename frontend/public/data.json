@@ -1,0 +1,331 @@
+{
+  "orders": [
+    {
+      "time": "10:50:02",
+      "type": "SELL",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": "300 / 300",
+      "avgPrice": 598.99,
+      "status": "COMPLETE",
+      "ltp": 1198.85,
+      "date": "2026-06-12"
+    },
+    {
+      "time": "10:48:29",
+      "type": "BUY",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": "300 / 300",
+      "avgPrice": 580.75,
+      "status": "COMPLETE",
+      "ltp": 1198.85,
+      "date": "2026-06-12"
+    },
+    {
+      "time": "10:45:15",
+      "type": "BUY",
+      "instrument": "NIFTY 20th JUN 18500 CE",
+      "exchange": "NFO",
+      "product": "MIS",
+      "qty": "100 / 100",
+      "avgPrice": 125.5,
+      "status": "COMPLETE",
+      "ltp": 130.2,
+      "date": "2026-06-12"
+    },
+    {
+      "time": "10:40:22",
+      "type": "SELL",
+      "instrument": "BANKNIFTY 22nd JUN 44000 PE",
+      "exchange": "BFO",
+      "product": "CNC",
+      "qty": "50 / 50",
+      "avgPrice": 250.75,
+      "status": "COMPLETE",
+      "ltp": 245.3,
+      "date": "2026-06-12"
+    },
+    {
+      "time": "10:35:10",
+      "type": "BUY",
+      "instrument": "RELIANCE 25th JUN 2500 CE",
+      "exchange": "NSE",
+      "product": "NRML",
+      "qty": "200 / 200",
+      "avgPrice": 45.3,
+      "status": "COMPLETE",
+      "ltp": 48.75,
+      "date": "2026-06-12"
+    },
+    {
+      "time": "10:30:05",
+      "type": "SELL",
+      "instrument": "HDFC 25th JUN 1500 PE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": "150 / 150",
+      "avgPrice": 75.6,
+      "status": "COMPLETE",
+      "ltp": 70.1,
+      "date": "2026-06-12"
+    },
+    {
+      "time": "11:05:40",
+      "type": "BUY",
+      "instrument": "ICICIBANK 30th JUN 1200 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": "100 / 0",
+      "avgPrice": 32.5,
+      "status": "REJECTED",
+      "date": "2026-06-12"
+    },
+    {
+      "time": "09:30:15",
+      "type": "BUY",
+      "instrument": "TATA MOTORS 30th JUN 500 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": "100 / 0",
+      "avgPrice": 25.5,
+      "status": "PENDING",
+      "date": "2026-06-12"
+    },
+    {
+      "time": "09:45:22",
+      "type": "SELL",
+      "instrument": "INFY 30th JUN 1500 PE",
+      "exchange": "NSE",
+      "product": "CNC",
+      "qty": "80 / 0",
+      "avgPrice": 45.75,
+      "status": "PENDING",
+      "date": "2026-06-12"
+    },
+    {
+      "time": "09:20:30",
+      "type": "BUY",
+      "instrument": "WIPRO 30th JUN 400 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": "200 / 0",
+      "avgPrice": 18.9,
+      "status": "PENDING",
+      "date": "2026-06-12"
+    },
+    {
+      "time": "09:15:45",
+      "type": "SELL",
+      "instrument": "SBIN 30th JUN 600 PE",
+      "exchange": "NSE",
+      "product": "NRML",
+      "qty": "120 / 0",
+      "avgPrice": 35.25,
+      "status": "PENDING",
+      "date": "2026-06-11"
+    },
+    {
+      "time": "09:10:20",
+      "type": "BUY",
+      "instrument": "BHARTIARTL 30th JUN 1000 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": "150 / 0",
+      "avgPrice": 55.6,
+      "status": "PENDING",
+      "date": "2026-06-11"
+    }
+  ],
+  "trades": [
+    {
+      "tradeId": "1611780",
+      "fillTime": "10:50:02",
+      "type": "SELL",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": 60,
+      "avgPrice": 598.9,
+      "orderStatus": "COMPLETE"
+    },
+    {
+      "tradeId": "1611760",
+      "fillTime": "10:50:02",
+      "type": "SELL",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": 180,
+      "avgPrice": 599,
+      "orderStatus": "COMPLETE"
+    },
+    {
+      "tradeId": "1611720",
+      "fillTime": "10:50:02",
+      "type": "SELL",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": 60,
+      "avgPrice": 599.05,
+      "orderStatus": "COMPLETE"
+    },
+    {
+      "tradeId": "1591340",
+      "fillTime": "10:48:29",
+      "type": "BUY",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": 80,
+      "avgPrice": 580.8,
+      "orderStatus": "COMPLETE"
+    },
+    {
+      "tradeId": "1591320",
+      "fillTime": "10:48:29",
+      "type": "BUY",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": 140,
+      "avgPrice": 580.75,
+      "orderStatus": "COMPLETE"
+    },
+    {
+      "tradeId": "1591290",
+      "fillTime": "10:48:29",
+      "type": "BUY",
+      "instrument": "SENSEX 18th JUN 74600 CE",
+      "exchange": "BFO",
+      "product": "MIS",
+      "qty": 80,
+      "avgPrice": 580.7,
+      "orderStatus": "COMPLETE"
+    },
+    {
+      "tradeId": "1700001",
+      "fillTime": "11:05:40",
+      "type": "BUY",
+      "instrument": "ICICIBANK 30th JUN 1200 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": 100,
+      "avgPrice": 32.5,
+      "orderStatus": "REJECTED"
+    },
+    {
+      "tradeId": "1892301",
+      "fillTime": "09:30:16",
+      "type": "BUY",
+      "instrument": "TATA MOTORS 30th JUN 500 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": 50,
+      "avgPrice": 25.45,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892302",
+      "fillTime": "09:30:18",
+      "type": "BUY",
+      "instrument": "TATA MOTORS 30th JUN 500 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": 50,
+      "avgPrice": 25.55,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892303",
+      "fillTime": "09:45:23",
+      "type": "SELL",
+      "instrument": "INFY 30th JUN 1500 PE",
+      "exchange": "NSE",
+      "product": "CNC",
+      "qty": 40,
+      "avgPrice": 45.7,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892304",
+      "fillTime": "09:45:25",
+      "type": "SELL",
+      "instrument": "INFY 30th JUN 1500 PE",
+      "exchange": "NSE",
+      "product": "CNC",
+      "qty": 40,
+      "avgPrice": 45.8,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892305",
+      "fillTime": "09:20:32",
+      "type": "BUY",
+      "instrument": "WIPRO 30th JUN 400 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": 100,
+      "avgPrice": 18.85,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892306",
+      "fillTime": "09:20:34",
+      "type": "BUY",
+      "instrument": "WIPRO 30th JUN 400 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": 100,
+      "avgPrice": 18.95,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892307",
+      "fillTime": "09:15:47",
+      "type": "SELL",
+      "instrument": "SBIN 30th JUN 600 PE",
+      "exchange": "NSE",
+      "product": "NRML",
+      "qty": 60,
+      "avgPrice": 35.2,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892308",
+      "fillTime": "09:15:49",
+      "type": "SELL",
+      "instrument": "SBIN 30th JUN 600 PE",
+      "exchange": "NSE",
+      "product": "NRML",
+      "qty": 60,
+      "avgPrice": 35.3,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892309",
+      "fillTime": "09:10:22",
+      "type": "BUY",
+      "instrument": "BHARTIARTL 30th JUN 1000 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": 75,
+      "avgPrice": 55.55,
+      "orderStatus": "PENDING"
+    },
+    {
+      "tradeId": "1892310",
+      "fillTime": "09:10:24",
+      "type": "BUY",
+      "instrument": "BHARTIARTL 30th JUN 1000 CE",
+      "exchange": "NSE",
+      "product": "MIS",
+      "qty": 75,
+      "avgPrice": 55.65,
+      "orderStatus": "PENDING"
+    }
+  ]
+}
