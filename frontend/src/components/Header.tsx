@@ -42,14 +42,14 @@ const { indices, initSocketListeners } = useMarketStore();
 
   return (
     <header
-      className="shrink-0 relative z-50 h-16 flex items-center justify-between px-20 border-b"
+      className="shrink-0 relative z-50 h-16 flex items-center justify-between px-40 border-b"
       style={{
         backgroundColor: "var(--color-primary)",
         borderBottomColor: "var(--border-overlay-12)",
       }}
     >
       {/* LEFT SIDE: Market Ticker + Logo + Toggle UI */}
-      <div className="flex items-center gap-4 shrink-0 px-22">
+      <div className="flex items-center gap-2 shrink-0 px-2">
 
         {/* ── Live Market Ticker ─────────────────────────────────────────── */}
         {headerTicker.length > 0

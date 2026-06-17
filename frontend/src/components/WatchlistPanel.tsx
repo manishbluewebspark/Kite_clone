@@ -1,13 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FiSearch } from "react-icons/fi";
-import { RiArrowUpSLine, RiArrowDownSLine } from "react-icons/ri";
 import {
   useWatchlistStore,
   startWatchlistPolling,
   stopWatchlistPolling,
 } from "../store/useWatchlistStore";
 import { useInstrumentListStore } from "../store/useInstrumentListStore";
+import NewGroupModal from "../components/modal/NewGroupModal";
+import ListsPanel from "../components/modal/ListsPanel";
+import SearchView from "../components/modal/SearchView";
+import GroupSection from "../components/modal/GroupSection";
+import EmptyGroup from "../components/modal/EmptyGroup";
+import BottomTabs from "../components/modal/BottomTabs";
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface WatchlistGroup {
+  id: string;
+  name: string;
+  color: string;
+  stockIds: number[];
+}
+
+interface WatchlistTab {
+  id: number;
+  name: string;
+  groups: WatchlistGroup[];
+}
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const MAX_WATCHLISTS = 7;
+const MAX_STOCKS_PER_WATCHLIST = 250;
+
+// ─── WatchlistPanel ──────────────────────────────────────────────────────────
 export default function WatchlistPanel() {
   const {
     entries,
@@ -22,29 +46,73 @@ export default function WatchlistPanel() {
     rows,
     page,
     totalPages,
-    total,
     loading: instrumentsLoading,
     setQuery,
     setPage,
     fetchPage,
   } = useInstrumentListStore();
 
+  // ── State ──
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeSearchTab, setActiveSearchTab] = useState("#");
+  const [hoveredStockId, setHoveredStockId] = useState<number | null>(null);
+  const [expandedStockId, setExpandedStockId] = useState<number | null>(null);
 
+  // Watchlist tabs (up to 7)
+  const [watchlistTabs, setWatchlistTabs] = useState<WatchlistTab[]>([
+    { id: 1, name: "Watchlist 1", groups: [{ id: "default", name: "Default", color: "#888", stockIds: [] }] },
+    { id: 2, name: "Watchlist 2", groups: [{ id: "default2", name: "Default", color: "#888", stockIds: [] }] },
+    { id: 3, name: "Watchlist 3", groups: [{ id: "default3", name: "Default", color: "#888", stockIds: [] }] },
+    { id: 4, name: "Watchlist 4", groups: [{ id: "default4", name: "Default", color: "#888", stockIds: [] }] },
+    { id: 5, name: "Watchlist 5", groups: [{ id: "default5", name: "Default", color: "#888", stockIds: [] }] },
+    { id: 6, name: "Watchlist 6", groups: [{ id: "default6", name: "Default", color: "#888", stockIds: [] }] },
+    { id: 7, name: "Watchlist 7", groups: [{ id: "default7", name: "Default", color: "#888", stockIds: [] }] },
+  ]);
+  const [activeTabId, setActiveTabId] = useState(1);
+
+  // Modal states
+  const [showNewGroupModal, setShowNewGroupModal] = useState(false);
+  const [showListsPanel, setShowListsPanel] = useState(false);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Effects ──
   useEffect(() => {
     fetchWatchlist();
-    fetchPage(); // pehla page load
+    fetchPage();
     startWatchlistPolling();
     return () => stopWatchlistPolling();
   }, []);
 
+  // Ctrl+K shortcut to focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // ── Handlers ──
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
-    setQuery(val); // debounced backend search trigger karega
+    setIsSearching(val.trim().length > 0);
+    if (val.trim().length > 0) {
+      setQuery(val);
+    }
   };
 
-  const handleBuy = (row: any) => {
-    // BUY click pe instrument ko watchlist/holdings me add karo
+  const handleSearchBlur = () => {
+    if (!searchQuery.trim()) {
+      setIsSearching(false);
+    }
+  };
+
+  const handleAddToWatchlist = (row: any) => {
     addStockFromHolding({
       name: row.symbol,
       full_name: row.name,
@@ -54,167 +122,190 @@ export default function WatchlistPanel() {
     });
   };
 
+  const handleCreateGroup = (name: string, color: string) => {
+    const newGroup: WatchlistGroup = {
+      id: `group_${Date.now()}`,
+      name: name,
+      color: color,
+      stockIds: [],
+    };
+    setWatchlistTabs((prev) =>
+      prev.map((tab) =>
+        tab.id === activeTabId
+          ? { ...tab, groups: [...tab.groups, newGroup] }
+          : tab
+      )
+    );
+  };
+
+  const handleCreateList = (name: string) => {
+    if (watchlistTabs.length >= MAX_WATCHLISTS) return;
+    const newId = watchlistTabs.length + 1;
+    setWatchlistTabs((prev) => [
+      ...prev,
+      {
+        id: newId,
+        name: name,
+        groups: [{ id: `default_${newId}`, name: "Default", color: "#888", stockIds: [] }],
+      },
+    ]);
+    setActiveTabId(newId);
+  };
+
+  const handleStockClick = (stockId: number) => {
+    setExpandedStockId((prev) => (prev === stockId ? null : stockId));
+  };
+
+  const activeTab = watchlistTabs.find((t) => t.id === activeTabId);
+  const totalStocksInActiveTab = entries.length;
+  const addedTokens = new Set(entries.map((e) => e.token));
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
-      className="flex flex-col border-r shrink-0"
+      className="flex flex-col border-r shrink-0 relative overflow-hidden"
       style={{
-        width: "440px",
-        height: "100%",
+        width: "420px",
+        height: "100vh",
         borderColor: "var(--border-overlay-12)",
         backgroundColor: "var(--color-primary)",
       }}
     >
-      {/* ── Search Bar (yahin se search chalega) ── */}
+      {/* ── Search Bar ── */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b"
+        className="flex items-center gap-2 px-3 py-2 border-b shrink-0"
         style={{ borderColor: "var(--border-overlay-12)" }}
       >
-        <FiSearch style={{ color: "var(--text-on-dark-45)", fontSize: "15px", flexShrink: 0 }} />
+        <FiSearch style={{ color: "var(--text-on-dark-45)", fontSize: "14px", flexShrink: 0 }} />
         <input
+          ref={searchInputRef}
           type="text"
           placeholder="Search eg: infy bse, nifty fut, index fund, et"
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="flex-1 bg-transparent text-sm outline-none"
+          onBlur={handleSearchBlur}
+          className="flex-1 bg-transparent outline-none"
           style={{ color: "var(--text-on-dark)", fontSize: "12px" }}
         />
+        <span
+          className="text-[10px] px-1.5 py-0.5 rounded border shrink-0"
+          style={{ color: "var(--text-on-dark-45)", borderColor: "var(--border-overlay-20)" }}
+        >
+          Ctrl + K
+        </span>
+        <button
+          className="shrink-0"
+          style={{ color: "var(--text-on-dark-45)" }}
+          title="Filter"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M2 4h12M4 8h8M6 12h4" />
+          </svg>
+        </button>
       </div>
 
-      {/* ── Saved Watchlist Section ── */}
-      {entries.length > 0 && (
+      {/* ══════════════════════════════════════════════════════════════════
+          SEARCH MODE — shown only when user is typing
+      ══════════════════════════════════════════════════════════════════ */}
+      {isSearching ? (
+        <SearchView
+          rows={rows}
+          loading={instrumentsLoading}
+          activeTab={activeSearchTab}
+          onTabChange={setActiveSearchTab}
+          addedTokens={addedTokens}
+          onAdd={handleAddToWatchlist}
+          onPageNext={() => setPage(page + 1)}
+          onPagePrev={() => setPage(page - 1)}
+          page={page}
+          totalPages={totalPages}
+        />
+      ) : (
+        /* ══════════════════════════════════════════════════════════════
+            NORMAL WATCHLIST MODE
+        ══════════════════════════════════════════════════════════════ */
         <>
+          {/* Header: Watchlist 1 (6/250) + New group */}
           <div
-            className="px-3 py-1.5 text-xs font-semibold border-b"
-            style={{
-              color: "var(--text-on-dark-80)",
-              borderColor: "var(--border-overlay-12)",
-              backgroundColor: "var(--bg-overlay-08)",
-            }}
+            className="flex items-center justify-between px-3 py-1.5 border-b shrink-0"
+            style={{ borderColor: "var(--border-overlay-12)" }}
           >
-            My Watchlist ({entries.length})
+            <span className="text-xs" style={{ color: "var(--text-on-dark-55)" }}>
+              Watchlist {activeTabId} ({totalStocksInActiveTab} / {MAX_STOCKS_PER_WATCHLIST})
+            </span>
+            <button
+              className="text-xs"
+              style={{ color: "#387ed1" }}
+              onClick={() => setShowNewGroupModal(true)}
+            >
+              + New group
+            </button>
           </div>
 
-          <div className="shrink-0 max-h-[200px] overflow-y-auto border-b" style={{ borderColor: "var(--border-overlay-12)" }}>
-            {entries.map((entry) => {
-              const q = quotes[entry.token];
-              const isUp = q ? q.isUp : true;
-              const price = q?.ltp ?? 0;
-              const change = q?.change ?? 0;
+          {/* Stock List — scrollable */}
+          <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+            {entries.length === 0 && !watchlistLoading && (
+              <div
+                className="px-3 py-6 text-xs text-center"
+                style={{ color: "var(--text-on-dark-45)" }}
+              >
+                No stocks in watchlist. Use the search bar to add.
+              </div>
+            )}
 
-              return (
-                <div
-                  key={entry.id}
-                  className="flex items-center justify-between px-3 py-2.5 border-b cursor-pointer hover:opacity-90 transition-opacity"
-                  style={{ borderColor: "var(--border-overlay-12)" }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    removeStock(entry.id);
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-semibold truncate" style={{ color: isUp ? "#22c55e" : "#ef4444" }}>
-                      {entry.symbol}
-                    </span>
-                    <span
-                      className="text-[9px] px-1 ml-1.5 rounded font-bold"
-                      style={{ color: "var(--text-on-dark-45)", backgroundColor: "var(--bg-overlay-10)" }}
-                    >
-                      {entry.exchange}
-                    </span>
-                  </div>
-                  <div className="text-right shrink-0 ml-2">
-                    <div className="text-sm font-semibold" style={{ color: "var(--text-on-dark-80)" }}>
-                      {change > 0 ? "+" : ""}{change.toFixed(2)}
-                    </div>
-                    <div className="flex items-center justify-end gap-0.5">
-                      {isUp ? <RiArrowUpSLine size={12} style={{ color: "#22c55e" }} /> : <RiArrowDownSLine size={12} style={{ color: "#ef4444" }} />}
-                      <span className="text-xs font-medium" style={{ color: isUp ? "#22c55e" : "#ef4444" }}>
-                        {price.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {/* Group Header */}
+            {entries.length > 0 && (
+              <GroupSection
+                name={`Default (${entries.length})`}
+                entries={entries}
+                quotes={quotes}
+                hoveredStockId={hoveredStockId}
+                expandedStockId={expandedStockId}
+                onHover={setHoveredStockId}
+                onStockClick={handleStockClick}
+                onRemove={removeStock}
+              />
+            )}
+
+            {/* Extra groups from this watchlist tab */}
+            {activeTab?.groups.slice(1).map((group) => (
+              <EmptyGroup key={group.id} name={group.name} />
+            ))}
           </div>
+
+          {/* ── New Group Modal ── */}
+          <NewGroupModal
+            isOpen={showNewGroupModal}
+            onClose={() => setShowNewGroupModal(false)}
+            onCreate={handleCreateGroup}
+          />
         </>
       )}
 
-      {/* ── All Instruments Section (search yahin filter karega) ── */}
-      <div
-        className="px-3 py-1.5 text-xs font-semibold border-b flex items-center justify-between"
-        style={{
-          color: "var(--text-on-dark-80)",
-          borderColor: "var(--border-overlay-12)",
-          backgroundColor: "var(--bg-overlay-08)",
+      {/* ── Bottom Tabs ── */}
+      <BottomTabs
+        tabs={watchlistTabs}
+        activeTabId={activeTabId}
+        onSwitch={(id: number) => {
+          setActiveTabId(id);
+          setExpandedStockId(null);
         }}
-      >
-        <span>All Instruments ({total})</span>
-        {instrumentsLoading && <span className="text-[10px]" style={{ color: "var(--text-on-dark-45)" }}>Loading...</span>}
-      </div>
+        onLayersClick={() => setShowListsPanel(true)}
+      />
 
-      <div className="flex-1 overflow-y-auto">
-        {rows.length === 0 && !instrumentsLoading && (
-          <div className="px-3 py-4 text-xs text-center" style={{ color: "var(--text-on-dark-45)" }}>
-            No instruments found
-          </div>
-        )}
-
-        {rows.map((row) => (
-          <div
-            key={`${row.exch_seg}-${row.token}`}
-            className="flex items-center justify-between px-3 py-2 border-b"
-            style={{ borderColor: "var(--border-overlay-12)" }}
-          >
-            <button
-              onClick={() => handleBuy(row)}
-              className="text-[10px] font-bold px-2 py-1 rounded text-white shrink-0 mr-2"
-              style={{ backgroundColor: "#16a34a" }}
-            >
-              BUY
-            </button>
-
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold truncate" style={{ color: "var(--text-on-dark-80)" }}>
-                {row.symbol}
-              </div>
-              <div className="text-[10px]" style={{ color: "var(--text-on-dark-45)" }}>
-                {row.exch_seg} • {row.expiry || "—"}
-              </div>
-            </div>
-
-            <span
-              className="text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0"
-              style={{ color: "var(--text-on-dark-45)", backgroundColor: "var(--bg-overlay-10)" }}
-            >
-              {row.lotsize}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Pagination (ye hi "tabs" hai) ── */}
-      <div className="flex items-center justify-between border-t px-3 py-2" style={{ borderColor: "var(--border-overlay-12)" }}>
-        <button
-          disabled={page <= 1}
-          onClick={() => setPage(page - 1)}
-          className="text-xs px-2 py-1 rounded disabled:opacity-30"
-          style={{ color: "var(--text-on-dark-55)" }}
-        >
-          ← Prev
-        </button>
-        <span className="text-xs" style={{ color: "var(--text-on-dark-55)" }}>
-          Page {page} / {totalPages}
-        </span>
-        <button
-          disabled={page >= totalPages}
-          onClick={() => setPage(page + 1)}
-          className="text-xs px-2 py-1 rounded disabled:opacity-30"
-          style={{ color: "var(--text-on-dark-55)" }}
-        >
-          Next →
-        </button>
-      </div>
+      {/* ── Lists Panel ── */}
+      <ListsPanel
+        isOpen={showListsPanel}
+        tabs={watchlistTabs}
+        activeTabId={activeTabId}
+        onSelectTab={(id: number) => {
+          setActiveTabId(id);
+          setShowListsPanel(false);
+          setExpandedStockId(null);
+        }}
+        onClose={() => setShowListsPanel(false)}
+        onCreateList={handleCreateList}
+      />
     </div>
   );
 }
