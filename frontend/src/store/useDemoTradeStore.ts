@@ -1,0 +1,83 @@
+import { create } from "zustand";
+import axiosInstance from "../lib/axios";
+
+export interface DemoTrade {
+  id: number;
+  symbol: string;
+  name: string;
+  exchange: string;
+  token: string;
+  transaction_type: "BUY" | "SELL";
+  quantity: number;
+  entry_price: number;
+  exit_price: number | null;
+  status: "OPEN" | "CLOSED";
+  pnl: number;
+  opened_at: string;
+  closed_at: string | null;
+}
+
+interface DemoTradeState {
+  trades: DemoTrade[];
+  loading: boolean;
+  error: string | null;
+  fetchTrades: (status?: "OPEN" | "CLOSED") => Promise<void>;
+  openTrade: (data: {
+    symbol: string;
+    name: string;
+    exchange: string;
+    token: string;
+    transaction_type: "BUY" | "SELL";
+    quantity: number;
+  }) => Promise<DemoTrade | null>;
+  closeTrade: (id: number) => Promise<void>;
+}
+
+export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
+  trades: [],
+  loading: false,
+  error: null,
+
+  fetchTrades: async (status) => {
+    set({ loading: true, error: null });
+    try {
+      const { data } = await axiosInstance.get("/api/demo-trades", {
+        params: status ? { status } : {},
+      });
+      if (data.success) {
+        set({ trades: data.data, loading: false });
+      }
+    } catch (err: any) {
+      set({ loading: false, error: err.response?.data?.message || err.message });
+    }
+  },
+
+  openTrade: async (tradeData) => {
+    set({ error: null });
+    try {
+      const { data } = await axiosInstance.post("/api/demo-trades/open", tradeData);
+      if (data.success) {
+        set({ trades: [data.data, ...get().trades] });
+        return data.data;
+      }
+      return null;
+    } catch (err: any) {
+      set({ error: err.response?.data?.message || err.message });
+      return null;
+    }
+  },
+
+  closeTrade: async (id) => {
+    set({ error: null });
+    try {
+      const { data } = await axiosInstance.post(`/api/demo-trades/${id}/close`);
+      if (data.success) {
+        set({
+          trades: get().trades.map((t) => (t.id === id ? data.data : t)),
+        });
+      }
+    } catch (err: any) {
+      set({ error: err.response?.data?.message || err.message });
+    }
+  },
+}));

@@ -22,6 +22,7 @@ const seed = async () => {
       name: "Admin",
       email: "admin@gmail.com",
       password: hashed,
+      role: "admin",
     });
 
     console.log("Admin seeded successfully");

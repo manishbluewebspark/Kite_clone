@@ -92,47 +92,88 @@ router.post("/refresh", authMiddleware, async (req, res) => {
 });
 
 // POST /api/instruments/bulk-ltp
+// router.post("/bulk-ltp", authMiddleware, async (req, res) => {
+//   try {
+//     const { instruments } = req.body;
+
+//     if (!Array.isArray(instruments) || instruments.length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "instruments array required",
+//       });
+//     }
+
+//     const smartApi = await getSmartApi();
+
+//     const ltpPromises = instruments.map(async ({ token, exchange, symbol }) => {
+//       try {
+//         const response = await smartApi.getLTPData({ exchange, tradingsymbol: symbol, symboltoken: token });
+//         if (response.status && response.data) {
+//           return {
+//             token,
+//             exchange,
+//             symbol,
+//             ltp: response.data.ltp,
+//             change: response.data.change || 0,
+//             changePercent: response.data.changepercent || 0,
+//             open: response.data.open,
+//             high: response.data.high,
+//             low: response.data.low,
+//           };
+//         }
+//         return { token, exchange, symbol, ltp: null, error: true };
+//       } catch (err) {
+//         return { token, exchange, symbol, ltp: null, error: true };
+//       }
+//     });
+
+//     const results = await Promise.all(ltpPromises);
+
+//     res.json({ success: true, data: results });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// });
+
+
+// instrumentRoutes.js me bulk-ltp route replace karo
 router.post("/bulk-ltp", authMiddleware, async (req, res) => {
   try {
     const { instruments } = req.body;
-
     if (!Array.isArray(instruments) || instruments.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "instruments array required",
-      });
+      return res.status(400).json({ success: false, message: "instruments array required" });
+    }
+
+    // Exchange ke hisaab se group karo
+    const grouped = {};
+    for (const { token, exchange } of instruments) {
+      const ex = exchange.toUpperCase();
+      if (!grouped[ex]) grouped[ex] = [];
+      grouped[ex].push(token);
     }
 
     const smartApi = await getSmartApi();
-
-    const ltpPromises = instruments.map(async ({ token, exchange, symbol }) => {
-      try {
-        const response = await smartApi.getLTPData({ exchange, tradingsymbol: symbol, symboltoken: token });
-        if (response.status && response.data) {
-          return {
-            token,
-            exchange,
-            symbol,
-            ltp: response.data.ltp,
-            change: response.data.change || 0,
-            changePercent: response.data.changepercent || 0,
-            open: response.data.open,
-            high: response.data.high,
-            low: response.data.low,
-          };
-        }
-        return { token, exchange, symbol, ltp: null, error: true };
-      } catch (err) {
-        return { token, exchange, symbol, ltp: null, error: true };
-      }
+    const response = await smartApi.marketData({
+      mode: "LTP",
+      exchangeTokens: grouped,
     });
 
-    const results = await Promise.all(ltpPromises);
+    const fetched = response?.data?.fetched ?? [];
+    const resultMap = {};
+    for (const item of fetched) {
+      resultMap[item.symbolToken] = item.ltp;
+    }
+
+    const results = instruments.map(({ token, exchange, symbol }) => ({
+      token,
+      exchange,
+      symbol,
+      ltp: resultMap[token] ?? null,
+    }));
 
     res.json({ success: true, data: results });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 export default router;

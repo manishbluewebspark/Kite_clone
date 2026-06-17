@@ -7,6 +7,7 @@ import {
   stopWatchlistPolling,
 } from "../store/useWatchlistStore";
 import { useInstrumentListStore } from "../store/useInstrumentListStore";
+import { useDemoTradeStore } from "../store/useDemoTradeStore";
 
 export default function WatchlistPanel() {
   const {
@@ -30,6 +31,8 @@ export default function WatchlistPanel() {
   } = useInstrumentListStore();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const { openTrade } = useDemoTradeStore();
+
 
   useEffect(() => {
     fetchWatchlist();
@@ -43,15 +46,22 @@ export default function WatchlistPanel() {
     setQuery(val); // debounced backend search trigger karega
   };
 
-  const handleBuy = (row: any) => {
-    // BUY click pe instrument ko watchlist/holdings me add karo
-    addStockFromHolding({
-      name: row.symbol,
-      full_name: row.name,
+  const handleBuy = async (row: any, type: "BUY" | "SELL") => {
+    const qty = window.prompt(`Enter quantity for ${row.symbol}:`, row.lotsize || "1");
+    if (!qty || Number(qty) <= 0) return;
+
+    const trade = await openTrade({
+      symbol: row.symbol,
+      name: row.name,
+      exchange: row.exch_seg,
       token: row.token,
-      exch_seg: row.exch_seg,
-      lotsize: Number(row.lotsize),
+      transaction_type: type,
+      quantity: Number(qty),
     });
+
+    if (trade) {
+      alert(`Demo ${type} order placed: ${row.symbol} x ${qty}`);
+    }
   };
 
   return (
@@ -167,7 +177,7 @@ export default function WatchlistPanel() {
             style={{ borderColor: "var(--border-overlay-12)" }}
           >
             <button
-              onClick={() => handleBuy(row)}
+              onClick={() => handleBuy(row, "BUY")}
               className="text-[10px] font-bold px-2 py-1 rounded text-white shrink-0 mr-2"
               style={{ backgroundColor: "#16a34a" }}
             >

@@ -64,6 +64,23 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       defaultValue: "user",
     },
+    // User.js me add karo
+    feed_token: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    jwt_token: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    refresh_token: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    token_updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "users",
