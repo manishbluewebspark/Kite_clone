@@ -17,9 +17,10 @@ import fundRoutes from "./routes/fundRoutes.js";
 import marketRoutes from "./routes/marketRoutes.js";
 import watchlistRoutes from "./routes/watchlistRoutes.js";
 import instrumentRoutes from "./routes/instrumentRoutes.js";
-import { startAngelMarketSocket, stopAngelMarketSocket } from "./services/angelMarketSocket.js";
+import { startAngelMarketSocket, stopAngelMarketSocket, subscribeInstrument } from "./services/angelMarketSocket.js";
 import demoTradeRoutes from "./routes/demoTradeRoutes.js";
-
+import { getExchangeType } from "./utils/exchangeMap.js";
+import DemoTrade from "./models/DemoTrade.js";
 dotenv.config();
 
 const app = express();
@@ -77,6 +78,20 @@ const startServer = async () => {
 
     await loadInstruments();
     await startAngelMarketSocket();
+    const openTrades = await DemoTrade.findAll({ where: { status: "OPEN" } });
+    const uniqueTokens = new Map();
+    openTrades.forEach((t) => uniqueTokens.set(t.token, t.exchange));
+
+    uniqueTokens.forEach((exchange, token) => {
+      try {
+        const exchangeType = getExchangeType(exchange);
+        subscribeInstrument(token, exchangeType);
+      } catch (err) {
+        console.error(`Resubscribe failed for ${token}:`, err.message);
+      }
+    });
+
+    console.log(`📡 Re-subscribed ${uniqueTokens.size} open demo-trade instruments`);
 
     server.listen(process.env.PORT, () => {
       console.log(`🚀 Server running on port ${process.env.PORT}`);

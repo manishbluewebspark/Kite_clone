@@ -2,10 +2,11 @@ import express from "express";
 import DemoTrade from "../models/DemoTrade.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { getLTP } from "../services/angelSession.js";
+import { subscribeInstrument, unsubscribeInstrument } from "../services/angelMarketSocket.js";
+import { getExchangeType } from "../utils/exchangeMap.js";
 
 const router = express.Router();
 
-// ── Open a demo trade (BUY/SELL simulate) ─────────────────────────────────
 router.post("/open", authMiddleware, async (req, res) => {
   try {
     const { symbol, name, exchange, token, transaction_type, quantity } = req.body;
@@ -37,6 +38,14 @@ router.post("/open", authMiddleware, async (req, res) => {
       status: "OPEN",
     });
 
+    // ⬅️ NAYA: socket pe is instrument ko subscribe karo
+    try {
+      const exchangeType = getExchangeType(exchange);
+      subscribeInstrument(token, exchangeType);
+    } catch (err) {
+      console.error("Subscribe error:", err.message);
+    }
+
     res.json({ success: true, data: trade });
   } catch (err) {
     console.error("Demo trade open error:", err.message);
@@ -44,11 +53,9 @@ router.post("/open", authMiddleware, async (req, res) => {
   }
 });
 
-// ── List all trades for logged-in user (open + closed) ───────────────────────
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const { status } = req.query; // optional filter: OPEN or CLOSED
-
+    const { status } = req.query;
     const where = { user_id: req.user.id };
     if (status) where.status = status.toUpperCase();
 
@@ -63,7 +70,6 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-// ── Close a demo trade (exit position) ────────────────────────────────────
 router.post("/:id/close", authMiddleware, async (req, res) => {
   try {
     const trade = await DemoTrade.findOne({
@@ -88,13 +94,25 @@ router.post("/:id/close", authMiddleware, async (req, res) => {
       closed_at: new Date(),
     });
 
+    // ⬅️ NAYA: agar koi aur OPEN trade isi token ka nahi hai, to unsubscribe karo
+    try {
+      const otherOpenTrades = await DemoTrade.count({
+        where: { token: trade.token, status: "OPEN" },
+      });
+      if (otherOpenTrades === 0) {
+        const exchangeType = getExchangeType(trade.exchange);
+        unsubscribeInstrument(trade.token, exchangeType);
+      }
+    } catch (err) {
+      console.error("Unsubscribe error:", err.message);
+    }
+
     res.json({ success: true, data: trade });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ── Delete a trade (optional, cleanup ke liye) ────────────────────────────
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const trade = await DemoTrade.findOne({

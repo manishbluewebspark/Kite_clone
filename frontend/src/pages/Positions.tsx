@@ -439,132 +439,15 @@
 // }
 
 
-
 import { useState, useEffect } from "react";
 import { HiOutlineDownload, HiSearch } from "react-icons/hi";
 import { RiArrowUpSLine, RiArrowDownSLine } from "react-icons/ri";
+import { useDemoTradeStore } from "../store/useDemoTradeStore";
 
-// ── Types ──
-interface Order {
-  time: string;
-  date: string;
-  type: "BUY" | "SELL";
-  instrument: string;
-  exchange: string;
-  product: string;
-  qty: string;
-  avgPrice: number;
-  status: "COMPLETE" | "PENDING" | "REJECTED" | "CANCELLED";
-  ltp?: number;
-}
-
-interface PositionRow {
-  product: string;
-  instrument: string;
-  exchange: string;
-  netQty: number;
-  avg: number;
-  ltp: number;
-  pnl: number;
-  chg: number;
-  status: "OPEN" | "CLOSED";
-}
-
-// ── Helpers ──
 function formatNumber(n: number) {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Splits "SENSEX 18th JUN 74600 CE" into base text + ordinal superscript + rest
-function renderInstrumentName(instrument: string) {
-  const match = instrument.match(/^(.*?\b\d+)(st|nd|rd|th)\b(.*)$/);
-  if (!match) return <span>{instrument}</span>;
-  const [, before, ordinal, after] = match;
-  return (
-    <span>
-      {before}
-      <sup className="text-[10px]">{ordinal}</sup>
-      <span className="text-blue-400  bg-blue-100 rounded-full">w</span>
-      {after.trim()}
-    </span>
-  );
-}
-
-// Returns today's date as YYYY-MM-DD
-function getTodayDate(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-// Derive today's positions from COMPLETE orders, grouped by instrument
-// Agar same instrument/product/exchange ka net qty 0 ho jaye (square off ho gya)
-// lekin trade aaj ki hi hai, to bhi position row dikhayenge with status "CLOSED"
-function derivePositions(orders: Order[]): PositionRow[] {
-  const groups = new Map<string, Order[]>();
-
-  const today = getTodayDate();
-
-  orders
-    .filter((o) => o.status === "COMPLETE" && o.date === today)
-    .forEach((o) => {
-      const key = `${o.instrument}__${o.product}__${o.exchange}`;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(o);
-    });
-
-  const rows: PositionRow[] = [];
-
-  groups.forEach((orderList, key) => {
-    const [instrument, product, exchange] = key.split("__");
-    const ltp = orderList[0].ltp ?? orderList[0].avgPrice;
-
-    let buyQty = 0;
-    let buyValue = 0;
-    let sellQty = 0;
-    let sellValue = 0;
-
-    orderList.forEach((o) => {
-      const executedQty = parseInt(o.qty.split("/")[1]?.trim() || "0", 10);
-      if (o.type === "BUY") {
-        buyQty += executedQty;
-        buyValue += executedQty * o.avgPrice;
-      } else {
-        sellQty += executedQty;
-        sellValue += executedQty * o.avgPrice;
-      }
-    });
-
-    const netQty = buyQty - sellQty;
-    const avgPrice =
-      buyQty + sellQty > 0 ? (buyValue + sellValue) / (buyQty + sellQty) : 0;
-
-    // Realized + unrealized P&L: (sell value - buy value) + net position marked to LTP
-    const pnl = sellValue - buyValue + netQty * ltp;
-    const chg = avgPrice > 0 ? ((ltp - avgPrice) / avgPrice) * 100 : 0;
-
-    // Net qty 0 ka matlab position square off ho gyi hai (CLOSED), warna OPEN hai
-    const status: "OPEN" | "CLOSED" = netQty === 0 ? "CLOSED" : "OPEN";
-
-    rows.push({
-      product,
-      instrument,
-      exchange,
-      netQty,
-      avg: avgPrice,
-      ltp,
-      pnl,
-      chg,
-      status,
-    });
-  });
-
-  return rows;
-}
-
-// ── Search Input ──
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white">
@@ -580,7 +463,6 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
-// ── Section Header ──
 function SectionHeader({
   title, count, collapsed, onToggle, searchVal, onSearch, extraActions
 }: {
@@ -589,19 +471,13 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between py-3.5 pb-2.5">
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-2 bg-none border-none cursor-pointer text-gray-800"
-      >
-        <span className="text-base font-semibold">
-          {title} ({count})
-        </span>
+      <button onClick={onToggle} className="flex items-center gap-2 bg-none border-none cursor-pointer text-gray-800">
+        <span className="text-base font-semibold">{title} ({count})</span>
         {collapsed
           ? <RiArrowDownSLine className="text-lg text-gray-400" />
           : <RiArrowUpSLine className="text-lg text-gray-400" />
         }
       </button>
-
       <div className="flex items-center gap-3">
         <SearchBox value={searchVal} onChange={onSearch} />
         {extraActions}
@@ -613,7 +489,18 @@ function SectionHeader({
   );
 }
 
-// ── Positions Table (shared shape for both sections) ──
+interface DisplayRow {
+  id: number;
+  product: string;
+  instrument: string;
+  exchange: string;
+  netQty: number;
+  avg: number;
+  ltp: number;
+  pnl: number;
+  chg: number;
+}
+
 function PositionsTable({
   rows,
   totalPnl,
@@ -621,15 +508,19 @@ function PositionsTable({
   selected,
   onToggleRow,
   onToggleAll,
+  onClosePosition,
 }: {
-  rows: PositionRow[];
+  rows: DisplayRow[];
   totalPnl: number;
   showCheckbox: boolean;
   selected?: Set<number>;
   onToggleRow?: (i: number) => void;
   onToggleAll?: () => void;
+  onClosePosition?: (id: number) => void;
 }) {
-  const cols = ["Product", "Instrument", "Qty.", "Avg.", "LTP", "P&L", "Chg."];
+  const cols = showCheckbox
+    ? ["Product", "Instrument", "Qty.", "Avg.", "LTP", "P&L", "Chg.", "Action"]
+    : ["Product", "Instrument", "Qty.", "Avg.", "LTP", "P&L", "Chg."];
 
   return (
     <div className="overflow-x-auto">
@@ -649,9 +540,8 @@ function PositionsTable({
             {cols.map((h) => (
               <th
                 key={h}
-                className={`px-3 py-2 text-[11px] font-semibold text-gray-400 text-left border-b border-gray-100 whitespace-nowrap ${
-                  ["Qty.", "Avg.", "LTP", "P&L", "Chg."].includes(h) ? "text-right" : ""
-                } ${h === "P&L" ? "bg-gray-50" : ""}`}
+                className={`px-3 py-2 text-[11px] font-semibold text-gray-400 text-left border-b border-gray-100 whitespace-nowrap ${["Qty.", "Avg.", "LTP", "P&L", "Chg."].includes(h) ? "text-right" : ""
+                  } ${h === "P&L" ? "bg-gray-50" : ""}`}
               >
                 {h}
               </th>
@@ -661,16 +551,13 @@ function PositionsTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td
-                colSpan={cols.length + (showCheckbox ? 1 : 0)}
-                className="px-3 py-8 text-center text-gray-400 text-[13px] border-b border-gray-100"
-              >
+              <td colSpan={cols.length + (showCheckbox ? 1 : 0)} className="px-3 py-8 text-center text-gray-400 text-[13px] border-b border-gray-100">
                 No data found
               </td>
             </tr>
           ) : (
             rows.map((pos, i) => (
-              <tr key={i} className="transition-colors duration-100 hover:bg-gray-50">
+              <tr key={pos.id} className="transition-colors duration-100 hover:bg-gray-50">
                 {showCheckbox && (
                   <td className="px-3 py-3 border-b border-gray-100">
                     <input
@@ -685,14 +572,9 @@ function PositionsTable({
                   <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
                     {pos.product}
                   </span>
-                  {/* {pos.status === "CLOSED" && (
-                    <span className="ml-1.5 text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
-                      CLOSED
-                    </span>
-                  )} */}
                 </td>
                 <td className="px-3 py-3 text-[13px] text-gray-700 border-b border-gray-100 whitespace-nowrap">
-                  {renderInstrumentName(pos.instrument)}{" "}
+                  {pos.instrument}{" "}
                   <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
                     {pos.exchange}
                   </span>
@@ -707,9 +589,8 @@ function PositionsTable({
                   {formatNumber(pos.ltp)}
                 </td>
                 <td
-                  className={`px-3 py-3 text-[13px] font-medium border-b border-gray-100 whitespace-nowrap text-right bg-gray-50 ${
-                    pos.pnl >= 0 ? "text-green-600" : "text-red-500"
-                  }`}
+                  className={`px-3 py-3 text-[13px] font-medium border-b border-gray-100 whitespace-nowrap text-right bg-gray-50 ${pos.pnl >= 0 ? "text-green-600" : "text-red-500"
+                    }`}
                 >
                   {pos.pnl >= 0 ? "+" : ""}
                   {formatNumber(pos.pnl)}
@@ -717,6 +598,16 @@ function PositionsTable({
                 <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap text-right">
                   {pos.chg.toFixed(2)}%
                 </td>
+                {showCheckbox && (
+                  <td className="px-3 py-3 text-[13px] border-b border-gray-100 whitespace-nowrap">
+                    <button
+                      onClick={() => onClosePosition?.(pos.id)}
+                      className="text-red-500 hover:underline text-[12px]"
+                    >
+                      Exit
+                    </button>
+                  </td>
+                )}
               </tr>
             ))
           )}
@@ -725,18 +616,13 @@ function PositionsTable({
           <tfoot>
             <tr>
               <td colSpan={showCheckbox ? 5 : 4}></td>
-              <td className="px-3 py-3 text-[13px] text-gray-600 text-right whitespace-nowrap">
-                Total P&L
-              </td>
-              <td
-                className={`px-3 py-3 text-[13px] font-semibold text-right whitespace-nowrap bg-gray-50 ${
-                  totalPnl >= 0 ? "text-green-600" : "text-red-500"
-                }`}
-              >
+              <td className="px-3 py-3 text-[13px] text-gray-600 text-right whitespace-nowrap">Total P&L</td>
+              <td className={`px-3 py-3 text-[13px] font-semibold text-right whitespace-nowrap bg-gray-50 ${totalPnl >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {totalPnl >= 0 ? "+" : ""}
                 {formatNumber(totalPnl)}
               </td>
               <td></td>
+              {showCheckbox && <td></td>}
             </tr>
           </tfoot>
         )}
@@ -745,10 +631,8 @@ function PositionsTable({
   );
 }
 
-// ── Main Component ──
 export default function Positions() {
-  const [positions, setPositions] = useState<PositionRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { trades, loading, fetchTrades, initLiveQuoteListener, liveQuotes, closeTrade } = useDemoTradeStore();
 
   const [positionsCollapsed, setPositionsCollapsed] = useState(false);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
@@ -757,27 +641,48 @@ export default function Positions() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const response = await fetch("/data.json");
-        const data = await response.json();
-        setPositions(derivePositions(data.orders || []));
-      } catch (error) {
-        console.error("Error loading data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchTrades();
+    initLiveQuoteListener(); // ⬅️ socket se real-time ticks suno, polling nahi
 
-    loadData();
+    // trades list ko occasionally refresh karo (naye trades, status changes pick karne ke liye)
+    // Yeh polling P&L ke liye NAHI hai, sirf list sync ke liye — light hai
+    const interval = setInterval(() => fetchTrades(), 10000);
+    return () => clearInterval(interval);
   }, []);
 
-  const filteredPositions = positions.filter((p) =>
-    p.instrument.toLowerCase().includes(positionSearch.toLowerCase())
-  );
-  const filteredHistory = positions.filter((p) =>
-    p.instrument.toLowerCase().includes(historySearch.toLowerCase())
-  );
+  const openTrades = trades.filter((t) => t.status === "OPEN");
+  const closedTrades = trades.filter((t) => t.status === "CLOSED");
+
+  const toDisplayRow = (t: any): DisplayRow => {
+    const liveLtp = liveQuotes[t.token]?.ltp ?? t.entry_price;
+    const pnl =
+      t.status === "CLOSED"
+        ? t.pnl
+        : t.transaction_type === "BUY"
+          ? (liveLtp - t.entry_price) * t.quantity
+          : (t.entry_price - liveLtp) * t.quantity;
+    const chg = t.entry_price > 0 ? ((liveLtp - t.entry_price) / t.entry_price) * 100 : 0;
+
+    return {
+      id: t.id,
+      product: t.transaction_type,
+      instrument: t.name,
+      exchange: t.exchange,
+      netQty: t.transaction_type === "BUY" ? t.quantity : -t.quantity,
+      avg: t.entry_price,
+      ltp: t.status === "CLOSED" ? t.exit_price ?? liveLtp : liveLtp,
+      pnl,
+      chg,
+    };
+  };
+
+  const filteredPositions = openTrades
+    .map(toDisplayRow)
+    .filter((p) => p.instrument.toLowerCase().includes(positionSearch.toLowerCase()));
+
+  const filteredHistory = closedTrades
+    .map(toDisplayRow)
+    .filter((p) => p.instrument.toLowerCase().includes(historySearch.toLowerCase()));
 
   const positionsTotalPnl = filteredPositions.reduce((sum, p) => sum + p.pnl, 0);
   const historyTotalPnl = filteredHistory.reduce((sum, p) => sum + p.pnl, 0);
@@ -799,11 +704,14 @@ export default function Positions() {
     }
   };
 
-  // Breakdown: sorted by absolute P&L desc, orange for negative, blue for positive
-  const breakdown = [...positions].sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
+  const handleClosePosition = async (id: number) => {
+    await closeTrade(id);
+  };
+
+  const breakdown = [...openTrades, ...closedTrades].map(toDisplayRow).sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
   const maxAbsPnl = Math.max(...breakdown.map((p) => Math.abs(p.pnl)), 1);
 
-  if (loading) {
+  if (loading && trades.length === 0) {
     return (
       <div className="min-h-full px-6 pb-6 text-gray-800 flex items-center justify-center h-[400px]">
         <div className="text-gray-400">Loading...</div>
@@ -813,7 +721,6 @@ export default function Positions() {
 
   return (
     <div className="min-h-full px-6 pb-6 text-gray-800 text-[13px] bg-white">
-      {/* ═══ Positions Section ═══ */}
       <SectionHeader
         title="Positions"
         count={filteredPositions.length}
@@ -841,10 +748,10 @@ export default function Positions() {
           selected={selected}
           onToggleRow={toggleRow}
           onToggleAll={toggleAll}
+          onClosePosition={handleClosePosition}
         />
       )}
 
-      {/* ═══ Day's History Section (same data, no checkbox) ═══ */}
       <div className="mt-6">
         <SectionHeader
           title="Day's history"
@@ -860,28 +767,25 @@ export default function Positions() {
         )}
       </div>
 
-      {/* ═══ Breakdown Section ═══ */}
       <div className="mt-8">
         <h2 className="text-base font-semibold text-gray-800 pb-2 border-b border-gray-100">
           Breakdown
         </h2>
 
         <div className="mt-4 space-y-2">
-          {breakdown.map((pos, i) => {
+          {breakdown.map((pos) => {
             const widthPct = (Math.abs(pos.pnl) / maxAbsPnl) * 100;
             const isNegative = pos.pnl < 0;
             const label = `${pos.instrument} (${pos.product})`;
 
             return (
-              <div key={i} className="flex items-center gap-2">
+              <div key={pos.id} className="flex items-center gap-2">
                 <div className="flex-1 flex items-center">
                   <div
                     className={`h-5 rounded-sm ${isNegative ? "bg-orange-400" : "bg-blue-500"}`}
                     style={{ width: `${widthPct}%`, minWidth: "2px" }}
                   />
-                  <span className="ml-2 text-[12px] text-gray-500 whitespace-nowrap">
-                    {label}
-                  </span>
+                  <span className="ml-2 text-[12px] text-gray-500 whitespace-nowrap">{label}</span>
                 </div>
               </div>
             );

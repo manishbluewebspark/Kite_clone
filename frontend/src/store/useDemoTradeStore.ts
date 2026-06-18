@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import axiosInstance from "../lib/axios";
+import { socket } from "../lib/socket";
 
 export interface DemoTrade {
   id: number;
@@ -17,11 +18,20 @@ export interface DemoTrade {
   closed_at: string | null;
 }
 
+interface LiveQuote {
+  ltp: number;
+  change: number;
+  changePct: number;
+  isUp: boolean;
+}
+
 interface DemoTradeState {
   trades: DemoTrade[];
+  liveQuotes: Record<string, LiveQuote>;
   loading: boolean;
   error: string | null;
   fetchTrades: (status?: "OPEN" | "CLOSED") => Promise<void>;
+  initLiveQuoteListener: () => void;
   openTrade: (data: {
     symbol: string;
     name: string;
@@ -35,6 +45,7 @@ interface DemoTradeState {
 
 export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
   trades: [],
+  liveQuotes: {},
   loading: false,
   error: null,
 
@@ -50,6 +61,18 @@ export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
     } catch (err: any) {
       set({ loading: false, error: err.response?.data?.message || err.message });
     }
+  },
+
+  // ── Socket listener — sirf ek baar register hoga ──────────────────────────
+  initLiveQuoteListener: () => {
+    socket.off("demo:tick"); // safe re-init, duplicate listeners se bachne ke liye
+    socket.on("demo:tick", (payload) => {
+      if (payload.success) {
+        set((state) => ({
+          liveQuotes: { ...state.liveQuotes, ...payload.data },
+        }));
+      }
+    });
   },
 
   openTrade: async (tradeData) => {
