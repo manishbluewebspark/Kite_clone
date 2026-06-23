@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Toaster, ToastBar  } from "react-hot-toast";
 
 import Login from "../pages/auth/Login";
 import Dashboard from "../pages/Dashboard";
@@ -43,7 +42,10 @@ import Positions from "../pages/Positions";
 import Funds from "../pages/Funds";
 import WithdrawFunds from "../pages/WithdrawFunds";
 import Bids from "../pages/Bids";
+import pluckSound from "../../public/sound/pluck.mp3";
 
+const playedToasts = new Set<string>();
+const toastAudio = new Audio(pluckSound);
 
 function ProtectedLayout() {
   const { isAuth } = useAuthStore();
@@ -80,7 +82,52 @@ export default function AppRoutes() {
 
   return (
     <BrowserRouter>
-      <ToastContainer />
+<Toaster
+  position="bottom-right"
+  toastOptions={{
+    duration: 3000,
+    className: "my-toast",
+    style: {
+      background: "#ffffff",
+      color: "#000000",
+      borderLeft: "4px solid #4CAF50",
+      padding: "16px",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+    },
+    success: {
+      icon: null,
+      className: "my-toast-success",
+      style: {
+        background: "#ffffff",
+        color: "#000000",
+        borderLeft: "4px solid #4CAF50",
+        padding: "16px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+      },
+    },
+    error: {
+      icon: null,
+      className: "my-toast-error",
+      style: {
+        background: "#ffffff",
+        color: "#000000",
+        borderLeft: "4px solid #f44336",
+        padding: "16px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+      },
+    },
+  }}
+>
+  {(t) => {
+    if (t.visible && !playedToasts.has(t.id)) {
+      toastAudio.currentTime = 0;
+      toastAudio.play().catch(() => {});
+      playedToasts.add(t.id);
+    }
+
+    return <ToastBar toast={t} />;
+  }}
+</Toaster>
 
       <Routes>
         {/* Public route */}

@@ -1,6 +1,5 @@
 import { useRef, useEffect } from "react";
 import {
-  RiArrowDownSLine,
   RiPencilLine,
   RiShieldUserLine,
   RiCoinsLine,
@@ -10,10 +9,15 @@ import {
   RiBookOpenLine,
   RiLogoutBoxRLine,
 } from "react-icons/ri";
+import { CiCircleQuestion } from "react-icons/ci";
 
 import { logoutApi } from "../api/authApi";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
+import { AiOutlineEdit } from "react-icons/ai";
+import { HiOutlineSupport } from "react-icons/hi";
+import { GoPersonAdd, GoQuestion } from "react-icons/go";
+import { MdKeyboardCommandKey, MdOutlineLogout } from "react-icons/md";
 
 interface UserDropdownProps {
   isOpen: boolean;
@@ -35,6 +39,15 @@ export default function UserDropdown({
 
   const displayName = user?.name || "Manish Shukla";
   const displayEmail = user?.email || "bluewebspark@gmail.com";
+  const user_id = user?.user_id;
+
+  // Extract initials for the purple circle (exactly like image: "MS")
+  const initials = displayName
+    .split(" ")
+    .map((word: string) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const handleLogout = async () => {
     try {
@@ -65,51 +78,45 @@ export default function UserDropdown({
 
   const menuItems = [
     {
-      icon: <RiShieldUserLine size={16} />,
+      icon: <img src="./console.jpg" className="w-3 h-3 ml-0.5" />,
       label: "Console",
     },
     {
-      icon: <RiCoinsLine size={16} />,
+      icon: <img src="./coin.png" className="w-3 h-3 ml-0.5" />,
       label: "Coin",
     },
     {
-      icon: <RiCustomerServiceLine size={16} />,
+      icon: <HiOutlineSupport size={16} />,
       label: "Support",
     },
     {
-      icon: <RiUserAddLine size={16} />,
+      icon: <GoPersonAdd size={16} />,
       label: "Invite friends",
     },
   ];
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Profile Button */}
+      {/* Profile Button - EXACTLY LIKE THE IMAGE */}
       <button
         onClick={onToggle}
-        className="flex items-center gap-2  px-2 py-1.5 hover:bg-[var(--bg-overlay-10)] transition-colors"
+        className="flex items-center gap-1.5 px-2 hover:opacity-80 transition-opacity"
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white text-sm font-semibold">
-          {displayName
-            .split(" ")
-            .map((word: any[]) => word[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase()}
+        {/* Purple Circle with Initials */}
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f3e8ff] text-[#7c3aed] text-[9px]">
+          {initials}
         </div>
 
-        <RiArrowDownSLine
-          className={`transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          size={18}
-        />
+        {/* Text like "JGQ802" */}
+        <span className="text-sm text-gray-700 font-normal hover:text-[#FF5A1F]">
+          {user_id}
+        </span>
       </button>
 
       {/* Dropdown */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-[250px] overflow-hidden bg-white shadow-xl z-9999"
+          className="absolute right-0 top-full w-[280px] overflow-hidden bg-white shadow-xl z-9999"
           style={{
             borderColor: "#e5e7eb",
           }}
@@ -118,17 +125,17 @@ export default function UserDropdown({
           <div className="px-4 pt-4 pb-3">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-[22px] leading-none font-normal text-gray-800">
+                <h3 className="text-[12px] leading-none font-normal text-gray-800">
                   {displayName}
                 </h3>
 
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-sm text-gray-500">
                   {displayEmail}
                 </p>
               </div>
 
               <button className="text-gray-500 hover:text-gray-700">
-                <RiPencilLine size={14} />
+                <AiOutlineEdit size={14} />
               </button>
             </div>
           </div>
@@ -137,25 +144,25 @@ export default function UserDropdown({
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-sm text-gray-700">Privacy mode</span>
 
-            <button className="relative h-5 w-9 rounded-full bg-gray-300">
-              <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white" />
+            <button className="relative h-4 w-8 rounded-full bg-gray-300">
+              <span className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-white" />
             </button>
           </div>
 
           {/* Theme */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
             <span className="text-sm text-gray-700">
               Theme ({isDark ? "Dark" : "Light"})
             </span>
 
             <button
               onClick={toggleTheme}
-              className={`relative h-5 w-9 rounded-full transition-colors ${
+              className={`relative h-4 w-8 rounded-full transition-colors ${
                 isDark ? "bg-green-500" : "bg-gray-300"
               }`}
             >
               <span
-                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${
+                className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${
                   isDark ? "left-[18px]" : "left-0.5"
                 }`}
               />
@@ -180,12 +187,12 @@ export default function UserDropdown({
           {/* Bottom Menu */}
           <div className="py-1">
             <button className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-              <RiKeyboardLine size={16} />
+              <MdKeyboardCommandKey size={16} />
               <span>Keyboard shortcuts</span>
             </button>
 
             <button className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-              <RiBookOpenLine size={16} />
+              <GoQuestion size={16} />
               <span>User manual</span>
             </button>
 
@@ -193,7 +200,7 @@ export default function UserDropdown({
               onClick={handleLogout}
               className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
             >
-              <RiLogoutBoxRLine size={16} />
+              <MdOutlineLogout size={16} />
               <span>Logout</span>
             </button>
           </div>

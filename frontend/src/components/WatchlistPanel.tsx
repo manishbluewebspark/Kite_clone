@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FiSearch } from "react-icons/fi";
+import { IoAddOutline } from "react-icons/io5";
 import {
   useWatchlistStore,
   startWatchlistPolling,
@@ -12,6 +13,7 @@ import SearchView from "../components/modal/SearchView";
 import GroupSection from "../components/modal/GroupSection";
 import EmptyGroup from "../components/modal/EmptyGroup";
 import BottomTabs from "../components/modal/BottomTabs";
+import { RiSoundModuleFill } from "react-icons/ri";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface WatchlistGroup {
@@ -166,42 +168,75 @@ export default function WatchlistPanel() {
       className="flex flex-col border-r shrink-0 relative overflow-hidden"
       style={{
         width: "420px",
-        height: "100vh",
         borderColor: "var(--border-overlay-12)",
         backgroundColor: "var(--color-primary)",
       }}
     >
       {/* ── Search Bar ── */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b shrink-0"
+        className="p-2 shrink-0"
         style={{ borderColor: "var(--border-overlay-12)" }}
       >
-        <FiSearch style={{ color: "var(--text-on-dark-45)", fontSize: "14px", flexShrink: 0 }} />
-        <input
-          ref={searchInputRef}
-          type="text"
-          placeholder="Search eg: infy bse, nifty fut, index fund, et"
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          onBlur={handleSearchBlur}
-          className="flex-1 bg-transparent outline-none"
-          style={{ color: "var(--text-on-dark)", fontSize: "12px" }}
-        />
-        <span
-          className="text-[10px] px-1.5 py-0.5 rounded border shrink-0"
-          style={{ color: "var(--text-on-dark-45)", borderColor: "var(--border-overlay-20)" }}
-        >
-          Ctrl + K
-        </span>
-        <button
-          className="shrink-0"
-          style={{ color: "var(--text-on-dark-45)" }}
-          title="Filter"
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M2 4h12M4 8h8M6 12h4" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xs border border-gray-200">
+
+          {/* Search Icon */}
+          <FiSearch
+            style={{
+              color: "var(--text-on-dark-45)",
+              fontSize: "13px",
+              flexShrink: 0,
+            }}
+          />
+
+          {/* Divider */}
+          <div
+            className="w-px h-4 shrink-0"
+            style={{ backgroundColor: "var(--border-overlay-20)" }}
+          />
+
+          {/* Input */}
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search eg: infy bse, nifty fut, index fund, et"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onBlur={handleSearchBlur}
+            className="flex-1 bg-transparent outline-none"
+            style={{
+              color: "var(--text-on-dark)",
+              fontSize: "11px",
+              minWidth: 0,
+            }}
+          />
+
+          {/* Ctrl + K */}
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-xs border shrink-0 whitespace-nowrap bg-gray-100"
+            style={{
+              color: "var(--text-on-dark-45)",
+              borderColor: "var(--border-overlay-20)",
+              lineHeight: "1.4",
+            }}
+          >
+            Ctrl + K
+          </span>
+
+          {/* Divider */}
+          <div
+            className="w-px h-4 shrink-0"
+            style={{ backgroundColor: "var(--border-overlay-20)" }}
+          />
+
+          {/* Filter Button */}
+          <button
+            className="shrink-0 flex items-center justify-center"
+            style={{ color: "var(--text-on-dark-45)" }}
+            title="Filter"
+          >
+            <RiSoundModuleFill size={14} />
+          </button>
+        </div>
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════
@@ -219,6 +254,10 @@ export default function WatchlistPanel() {
           onPagePrev={() => setPage(page - 1)}
           page={page}
           totalPages={totalPages}
+          onBuy={(_row) => {}}
+          onSell={(_row) => {}}
+          onChart={(_row) => {}}
+          onInfo={(_row) => {}}
         />
       ) : (
         /* ══════════════════════════════════════════════════════════════
@@ -227,18 +266,19 @@ export default function WatchlistPanel() {
         <>
           {/* Header: Watchlist 1 (6/250) + New group */}
           <div
-            className="flex items-center justify-between px-3 py-1.5 border-b shrink-0"
+            className="flex items-center justify-between px-3 py-1.5 shrink-0"
             style={{ borderColor: "var(--border-overlay-12)" }}
           >
             <span className="text-xs" style={{ color: "var(--text-on-dark-55)" }}>
               Watchlist {activeTabId} ({totalStocksInActiveTab} / {MAX_STOCKS_PER_WATCHLIST})
             </span>
             <button
-              className="text-xs"
+              className="text-xs flex items-center gap-1"
               style={{ color: "#387ed1" }}
               onClick={() => setShowNewGroupModal(true)}
             >
-              + New group
+              <IoAddOutline size={14} />
+              New group
             </button>
           </div>
 
@@ -256,7 +296,7 @@ export default function WatchlistPanel() {
             {/* Group Header */}
             {entries.length > 0 && (
               <GroupSection
-                name={`Default (${entries.length})`}
+                name={`Default`}
                 entries={entries}
                 quotes={quotes}
                 hoveredStockId={hoveredStockId}

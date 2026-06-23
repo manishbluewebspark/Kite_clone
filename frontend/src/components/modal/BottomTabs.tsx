@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 interface WatchlistTab {
   id: number;
   name: string;
@@ -11,18 +13,63 @@ interface BottomTabsProps {
   onLayersClick: () => void;
 }
 
+const VISIBLE_COUNT = 7; // kitne tabs ek baar dikhenge
+
 export default function BottomTabs({
   tabs,
   activeTabId,
   onSwitch,
   onLayersClick,
 }: BottomTabsProps) {
+  const [startIndex, setStartIndex] = useState(0);
+
+  const canGoPrev = startIndex > 0;
+  const canGoNext = startIndex + VISIBLE_COUNT < tabs.length;
+  const visibleTabs = tabs.slice(startIndex, startIndex + VISIBLE_COUNT);
+
+  const handlePrev = () => {
+    if (canGoPrev) setStartIndex((i) => i - 1);
+  };
+
+  const handleNext = () => {
+    if (canGoNext) setStartIndex((i) => i + 1);
+  };
+
+  // Jab active tab visible range se bahar ho to auto-scroll
+  const activeIndex = tabs.findIndex((t) => t.id === activeTabId);
+  if (activeIndex < startIndex) {
+    setStartIndex(activeIndex);
+  } else if (activeIndex >= startIndex + VISIBLE_COUNT) {
+    setStartIndex(activeIndex - VISIBLE_COUNT + 1);
+  }
+
   return (
     <div
       className="flex items-center border-t shrink-0 px-2"
       style={{ borderColor: "var(--border-overlay-12)" }}
     >
-      {tabs.map((tab) => (
+      {/* Left Arrow — sirf tab dikhao jab tabs VISIBLE_COUNT se zyada hon */}
+      {tabs.length > VISIBLE_COUNT && (
+        <button
+          onClick={handlePrev}
+          disabled={!canGoPrev}
+          className="flex items-center justify-center px-1 py-1.5"
+          style={{
+            color: canGoPrev ? "var(--text-on-dark-45)" : "var(--border-overlay-20)",
+            cursor: canGoPrev ? "pointer" : "not-allowed",
+            fontSize: "12px",
+            background: "transparent",
+            border: "none",
+            lineHeight: 1,
+          }}
+          title="Previous tabs"
+        >
+          ‹
+        </button>
+      )}
+
+      {/* Visible Tabs */}
+      {visibleTabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onSwitch(tab.id)}
@@ -37,6 +84,28 @@ export default function BottomTabs({
           {tab.id}
         </button>
       ))}
+
+      {/* Right Arrow */}
+      {tabs.length > VISIBLE_COUNT && (
+        <button
+          onClick={handleNext}
+          disabled={!canGoNext}
+          className="flex items-center justify-center px-1 py-1.5"
+          style={{
+            color: canGoNext ? "var(--text-on-dark-45)" : "var(--border-overlay-20)",
+            cursor: canGoNext ? "pointer" : "not-allowed",
+            fontSize: "12px",
+            background: "transparent",
+            border: "none",
+            lineHeight: 1,
+          }}
+          title="Next tabs"
+        >
+          ›
+        </button>
+      )}
+
+      {/* Layers / All Lists Button */}
       <button
         onClick={onLayersClick}
         className="ml-auto flex items-center gap-0.5 px-2 py-1.5"

@@ -16,6 +16,52 @@ router.get("/indices", async (req, res) => {
 
 // ── POST /api/market/quotes ───────────────────────────────────────────────────
 // Body: { tokens: [{ exchange: "NSE", token: "2885" }] }
+// router.post("/quotes", async (req, res) => {
+//   const { tokens } = req.body;
+
+//   if (!tokens?.length) {
+//     return res.status(400).json({ success: false, message: "tokens array required" });
+//   }
+
+//   try {
+//     const smartApi = await getSmartApi();
+
+//     const exchangeTokens = {};
+//     tokens.forEach(({ exchange, token }) => {
+//       if (!exchangeTokens[exchange]) exchangeTokens[exchange] = [];
+//       exchangeTokens[exchange].push(token);
+//     });
+
+//     const result = await smartApi.marketData({ mode: "LTP", exchangeTokens });
+
+//     if (!result || result.status === false) {
+//       throw new Error(result?.message || "marketData LTP failed");
+//     }
+
+//     const quotes = {};
+//     (result.data?.fetched || []).forEach((d) => {
+//       const ltp    = parseFloat(d.ltp   || 0);
+//       const close  = parseFloat(d.close || 0);
+//       const chg    = parseFloat((ltp - close).toFixed(2));
+//       const chgPct = close > 0 ? parseFloat(((chg / close) * 100).toFixed(2)) : 0;
+
+//       quotes[d.symbolToken] = {
+//         ltp,
+//         change:    chg,
+//         changePct: chgPct,
+//         isUp:      chg >= 0,
+//         symbol:    d.tradingSymbol || "",
+//       };
+//     });
+
+//     res.json({ success: true, data: quotes, fetchedAt: new Date().toISOString() });
+//   } catch (err) {
+//     console.error("❌ Quotes error:", err.message);
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// });
+
+
 router.post("/quotes", async (req, res) => {
   const { tokens } = req.body;
 
@@ -32,25 +78,55 @@ router.post("/quotes", async (req, res) => {
       exchangeTokens[exchange].push(token);
     });
 
-    const result = await smartApi.marketData({ mode: "LTP", exchangeTokens });
+    // 🔥 FIX: Use OHLC mode to get proper close price
+    const result = await smartApi.marketData({ mode: "OHLC", exchangeTokens });
 
     if (!result || result.status === false) {
-      throw new Error(result?.message || "marketData LTP failed");
+      throw new Error(result?.message || "marketData OHLC failed");
     }
 
     const quotes = {};
     (result.data?.fetched || []).forEach((d) => {
-      const ltp    = parseFloat(d.ltp   || 0);
-      const close  = parseFloat(d.close || 0);
-      const chg    = parseFloat((ltp - close).toFixed(2));
-      const chgPct = close > 0 ? parseFloat(((chg / close) * 100).toFixed(2)) : 0;
+      const ltp = parseFloat(d.ltp || 0);
+      const close = parseFloat(d.close || d.prevClose || d.previousClose || 0);
+      const open = parseFloat(d.open || 0);
+      const dayHigh = parseFloat(d.dayHigh || d.high || 0);
+      const dayLow = parseFloat(d.dayLow || d.low || 0);
+      
+      let chg = 0;
+      let chgPct = 0;
+      let isUp = false;
+      let isDown = false;
+      let isFlat = true;
+      
+      if (close > 0 && ltp > 0) {
+        chg = parseFloat((ltp - close).toFixed(2));
+        chgPct = close > 0 ? parseFloat(((chg / close) * 100).toFixed(2)) : 0;
+        isUp = chg > 0;
+        isDown = chg < 0;
+        isFlat = chg === 0;
+      } else {
+
+        chg = 0;
+        chgPct = 0;
+        isUp = false;
+        isDown = false;
+        isFlat = true;
+      }
 
       quotes[d.symbolToken] = {
         ltp,
-        change:    chg,
+        change: chg,
         changePct: chgPct,
-        isUp:      chg >= 0,
-        symbol:    d.tradingSymbol || "",
+        isUp,
+        isDown,
+        isFlat,
+        symbol: d.tradingSymbol || d.symbol || "",
+        close: close,
+        open: open,
+        dayHigh: dayHigh,
+        dayLow: dayLow,
+        prevClose: close,
       };
     });
 
@@ -60,6 +136,9 @@ router.post("/quotes", async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
+
 
 // ── GET /api/market/holdings ──────────────────────────────────────────────────
 router.get("/holdings", async (req, res) => {

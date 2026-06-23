@@ -110,11 +110,15 @@ function buildAndBroadcast() {
 
 export const startAngelMarketSocket = async () => {
   try {
+    console.log("🟡 Step 1: getting session");
     const sess = await getSession();
+    console.log("🟡 Step 2: session fetched", !!sess.accessToken, !!sess.feedToken);
 
     if (!sess.accessToken || !sess.feedToken) {
       throw new Error("Angel One session not ready (missing jwtToken/feedToken)");
     }
+
+    // wsInstance = new WebSocketV2({...});
 
     wsInstance = new WebSocketV2({
       clientcode: process.env.ANGEL_CLIENT_ID,
@@ -123,8 +127,14 @@ export const startAngelMarketSocket = async () => {
       feedtype: sess.feedToken,
     });
 
+    console.log("🟡 Step 3: calling connect()");
     await wsInstance.connect();
     console.log("✅ Angel One WebSocket V2 connected");
+
+
+
+    // await wsInstance.connect();
+    // console.log("✅ Angel One WebSocket V2 connected");
 
     wsInstance.reconnection("simple", 5000);
 

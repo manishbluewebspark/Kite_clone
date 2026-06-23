@@ -1,490 +1,120 @@
-// import { useState, useEffect } from "react";
-// import { HiOutlineDownload, HiSearch } from "react-icons/hi";
-// import { RiArrowUpSLine, RiArrowDownSLine } from "react-icons/ri";
-
-// // ── Types ──
-// interface Order {
-//   time: string;
-//   date: string;
-//   type: "BUY" | "SELL";
-//   instrument: string;
-//   exchange: string;
-//   product: string;
-//   qty: string;
-//   avgPrice: number;
-//   status: "COMPLETE" | "PENDING" | "REJECTED" | "CANCELLED";
-//   ltp?: number;
-// }
-
-// interface PositionRow {
-//   product: string;
-//   instrument: string;
-//   exchange: string;
-//   netQty: number;
-//   avg: number;
-//   ltp: number;
-//   pnl: number;
-//   chg: number;
-// }
-
-// // ── Helpers ──
-// function formatNumber(n: number) {
-//   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-// }
-
-// // Splits "SENSEX 18th JUN 74600 CE" into base text + ordinal superscript + rest
-// function renderInstrumentName(instrument: string) {
-//   const match = instrument.match(/^(.*?\b\d+)(st|nd|rd|th)\b(.*)$/);
-//   if (!match) return <span>{instrument}</span>;
-//   const [, before, ordinal, after] = match;
-//   return (
-//     <span>
-//       {before}
-//       <sup className="text-[10px]">{ordinal}</sup>
-//       <span className="text-blue-400  bg-blue-100 rounded-full">w</span>
-//       {after.trim()}
-//     </span>
-//   );
-// }
-
-// // Returns today's date as YYYY-MM-DD
-// function getTodayDate(): string {
-//   const d = new Date();
-//   const yyyy = d.getFullYear();
-//   const mm = String(d.getMonth() + 1).padStart(2, "0");
-//   const dd = String(d.getDate()).padStart(2, "0");
-//   return `${yyyy}-${mm}-${dd}`;
-// }
-
-// // Derive today's positions from COMPLETE orders, grouped by instrument
-// function derivePositions(orders: Order[]): PositionRow[] {
-//   const groups = new Map<string, Order[]>();
-
-//   const today = getTodayDate();
-
-//   orders
-//     .filter((o) => o.status === "COMPLETE" && o.date === today)
-//     .forEach((o) => {
-//       const key = `${o.instrument}__${o.product}__${o.exchange}`;
-//       if (!groups.has(key)) groups.set(key, []);
-//       groups.get(key)!.push(o);
-//     });
-
-//   const rows: PositionRow[] = [];
-
-//   groups.forEach((orderList, key) => {
-//     const [instrument, product, exchange] = key.split("__");
-//     const ltp = orderList[0].ltp ?? orderList[0].avgPrice;
-
-//     let buyQty = 0;
-//     let buyValue = 0;
-//     let sellQty = 0;
-//     let sellValue = 0;
-
-//     orderList.forEach((o) => {
-//       const executedQty = parseInt(o.qty.split("/")[1]?.trim() || "0", 10);
-//       if (o.type === "BUY") {
-//         buyQty += executedQty;
-//         buyValue += executedQty * o.avgPrice;
-//       } else {
-//         sellQty += executedQty;
-//         sellValue += executedQty * o.avgPrice;
-//       }
-//     });
-
-//     const netQty = buyQty - sellQty;
-//     const avgPrice =
-//       buyQty + sellQty > 0 ? (buyValue + sellValue) / (buyQty + sellQty) : 0;
-
-//     // Realized + unrealized P&L: (sell value - buy value) + net position marked to LTP
-//     const pnl = sellValue - buyValue + netQty * ltp;
-//     const chg = avgPrice > 0 ? ((ltp - avgPrice) / avgPrice) * 100 : 0;
-
-//     rows.push({
-//       product,
-//       instrument,
-//       exchange,
-//       netQty,
-//       avg: avgPrice,
-//       ltp,
-//       pnl,
-//       chg,
-//     });
-//   });
-
-//   return rows;
-// }
-
-// // ── Search Input ──
-// function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-//   return (
-//     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white">
-//       <HiSearch className="text-gray-400 text-sm shrink-0" />
-//       <input
-//         type="text"
-//         placeholder="Search"
-//         value={value}
-//         onChange={(e) => onChange(e.target.value)}
-//         className="bg-transparent border-none outline-none text-xs text-gray-700 w-[120px]"
-//       />
-//     </div>
-//   );
-// }
-
-// // ── Section Header ──
-// function SectionHeader({
-//   title, count, collapsed, onToggle, searchVal, onSearch, extraActions
-// }: {
-//   title: string; count: number; collapsed: boolean; onToggle: () => void;
-//   searchVal: string; onSearch: (v: string) => void; extraActions?: React.ReactNode;
-// }) {
-//   return (
-//     <div className="flex items-center justify-between py-3.5 pb-2.5">
-//       <button
-//         onClick={onToggle}
-//         className="flex items-center gap-2 bg-none border-none cursor-pointer text-gray-800"
-//       >
-//         <span className="text-base font-semibold">
-//           {title} ({count})
-//         </span>
-//         {collapsed
-//           ? <RiArrowDownSLine className="text-lg text-gray-400" />
-//           : <RiArrowUpSLine className="text-lg text-gray-400" />
-//         }
-//       </button>
-
-//       <div className="flex items-center gap-3">
-//         <SearchBox value={searchVal} onChange={onSearch} />
-//         {extraActions}
-//         <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
-//           <HiOutlineDownload size={14} /> Download
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-// // ── Positions Table (shared shape for both sections) ──
-// function PositionsTable({
-//   rows,
-//   totalPnl,
-//   showCheckbox,
-//   selected,
-//   onToggleRow,
-//   onToggleAll,
-// }: {
-//   rows: PositionRow[];
-//   totalPnl: number;
-//   showCheckbox: boolean;
-//   selected?: Set<number>;
-//   onToggleRow?: (i: number) => void;
-//   onToggleAll?: () => void;
-// }) {
-//   const cols = ["Product", "Instrument", "Qty.", "Avg.", "LTP", "P&L", "Chg."];
-
-//   return (
-//     <div className="overflow-x-auto">
-//       <table className="w-full border-collapse">
-//         <thead>
-//           <tr>
-//             {showCheckbox && (
-//               <th className="px-3 py-2 border-b border-gray-100 w-8">
-//                 <input
-//                   type="checkbox"
-//                   checked={rows.length > 0 && selected?.size === rows.length}
-//                   onChange={onToggleAll}
-//                   className="cursor-pointer"
-//                 />
-//               </th>
-//             )}
-//             {cols.map((h) => (
-//               <th
-//                 key={h}
-//                 className={`px-3 py-2 text-[11px] font-semibold text-gray-400 text-left border-b border-gray-100 whitespace-nowrap ${
-//                   ["Qty.", "Avg.", "LTP", "P&L", "Chg."].includes(h) ? "text-right" : ""
-//                 } ${h === "P&L" ? "bg-gray-50" : ""}`}
-//               >
-//                 {h}
-//               </th>
-//             ))}
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {rows.length === 0 ? (
-//             <tr>
-//               <td
-//                 colSpan={cols.length + (showCheckbox ? 1 : 0)}
-//                 className="px-3 py-8 text-center text-gray-400 text-[13px] border-b border-gray-100"
-//               >
-//                 No data found
-//               </td>
-//             </tr>
-//           ) : (
-//             rows.map((pos, i) => (
-//               <tr key={i} className="transition-colors duration-100 hover:bg-gray-50">
-//                 {showCheckbox && (
-//                   <td className="px-3 py-3 border-b border-gray-100">
-//                     <input
-//                       type="checkbox"
-//                       checked={selected?.has(i) ?? false}
-//                       onChange={() => onToggleRow?.(i)}
-//                       className="cursor-pointer"
-//                     />
-//                   </td>
-//                 )}
-//                 <td className="px-3 py-3 border-b border-gray-100 whitespace-nowrap">
-//                   <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-//                     {pos.product}
-//                   </span>
-//                 </td>
-//                 <td className="px-3 py-3 text-[13px] text-gray-700 border-b border-gray-100 whitespace-nowrap">
-//                   {renderInstrumentName(pos.instrument)}{" "}
-//                   <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-//                     {pos.exchange}
-//                   </span>
-//                 </td>
-//                 <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap text-right">
-//                   {pos.netQty}
-//                 </td>
-//                 <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap text-right">
-//                   {pos.avg.toFixed(2)}
-//                 </td>
-//                 <td className="px-3 py-3 text-[13px] text-gray-700 border-b border-gray-100 whitespace-nowrap text-right">
-//                   {formatNumber(pos.ltp)}
-//                 </td>
-//                 <td
-//                   className={`px-3 py-3 text-[13px] font-medium border-b border-gray-100 whitespace-nowrap text-right bg-gray-50 ${
-//                     pos.pnl >= 0 ? "text-green-600" : "text-red-500"
-//                   }`}
-//                 >
-//                   {pos.pnl >= 0 ? "+" : ""}
-//                   {formatNumber(pos.pnl)}
-//                 </td>
-//                 <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap text-right">
-//                   {pos.chg.toFixed(2)}%
-//                 </td>
-//               </tr>
-//             ))
-//           )}
-//         </tbody>
-//         {rows.length > 0 && (
-//           <tfoot>
-//             <tr>
-//               <td colSpan={showCheckbox ? 5 : 4}></td>
-//               <td className="px-3 py-3 text-[13px] text-gray-600 text-right whitespace-nowrap">
-//                 Total P&L
-//               </td>
-//               <td
-//                 className={`px-3 py-3 text-[13px] font-semibold text-right whitespace-nowrap bg-gray-50 ${
-//                   totalPnl >= 0 ? "text-green-600" : "text-red-500"
-//                 }`}
-//               >
-//                 {totalPnl >= 0 ? "+" : ""}
-//                 {formatNumber(totalPnl)}
-//               </td>
-//               <td></td>
-//             </tr>
-//           </tfoot>
-//         )}
-//       </table>
-//     </div>
-//   );
-// }
-
-// // ── Main Component ──
-// export default function Positions() {
-//   const [positions, setPositions] = useState<PositionRow[]>([]);
-//   const [loading, setLoading] = useState(true);
-
-//   const [positionsCollapsed, setPositionsCollapsed] = useState(false);
-//   const [historyCollapsed, setHistoryCollapsed] = useState(false);
-//   const [positionSearch, setPositionSearch] = useState("");
-//   const [historySearch, setHistorySearch] = useState("");
-//   const [selected, setSelected] = useState<Set<number>>(new Set());
-
-//   useEffect(() => {
-//     const loadData = async () => {
-//       try {
-//         const response = await fetch("/data.json");
-//         const data = await response.json();
-//         setPositions(derivePositions(data.orders || []));
-//       } catch (error) {
-//         console.error("Error loading data:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     loadData();
-//   }, []);
-
-//   const filteredPositions = positions.filter((p) =>
-//     p.instrument.toLowerCase().includes(positionSearch.toLowerCase())
-//   );
-//   const filteredHistory = positions.filter((p) =>
-//     p.instrument.toLowerCase().includes(historySearch.toLowerCase())
-//   );
-
-//   const positionsTotalPnl = filteredPositions.reduce((sum, p) => sum + p.pnl, 0);
-//   const historyTotalPnl = filteredHistory.reduce((sum, p) => sum + p.pnl, 0);
-
-//   const toggleRow = (i: number) => {
-//     setSelected((prev) => {
-//       const next = new Set(prev);
-//       if (next.has(i)) next.delete(i);
-//       else next.add(i);
-//       return next;
-//     });
-//   };
-
-//   const toggleAll = () => {
-//     if (selected.size === filteredPositions.length) {
-//       setSelected(new Set());
-//     } else {
-//       setSelected(new Set(filteredPositions.map((_, i) => i)));
-//     }
-//   };
-
-//   // Breakdown: sorted by absolute P&L desc, orange for negative, blue for positive
-//   const breakdown = [...positions].sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
-//   const maxAbsPnl = Math.max(...breakdown.map((p) => Math.abs(p.pnl)), 1);
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-full px-6 pb-6 text-gray-800 flex items-center justify-center h-[400px]">
-//         <div className="text-gray-400">Loading...</div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-full px-6 pb-6 text-gray-800 text-[13px]">
-//       {/* ═══ Positions Section ═══ */}
-//       <SectionHeader
-//         title="Positions"
-//         count={filteredPositions.length}
-//         collapsed={positionsCollapsed}
-//         onToggle={() => setPositionsCollapsed((p) => !p)}
-//         searchVal={positionSearch}
-//         onSearch={setPositionSearch}
-//         extraActions={
-//           <>
-//             <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
-//               Analytics
-//             </button>
-//             <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
-//               Settings
-//             </button>
-//           </>
-//         }
-//       />
-
-//       {!positionsCollapsed && (
-//         <PositionsTable
-//           rows={filteredPositions}
-//           totalPnl={positionsTotalPnl}
-//           showCheckbox
-//           selected={selected}
-//           onToggleRow={toggleRow}
-//           onToggleAll={toggleAll}
-//         />
-//       )}
-
-//       {/* ═══ Day's History Section (same data, no checkbox) ═══ */}
-//       <div className="mt-6">
-//         <SectionHeader
-//           title="Day's history"
-//           count={filteredHistory.length}
-//           collapsed={historyCollapsed}
-//           onToggle={() => setHistoryCollapsed((p) => !p)}
-//           searchVal={historySearch}
-//           onSearch={setHistorySearch}
-//         />
-
-//         {!historyCollapsed && (
-//           <PositionsTable rows={filteredHistory} totalPnl={historyTotalPnl} showCheckbox={false} />
-//         )}
-//       </div>
-
-//       {/* ═══ Breakdown Section ═══ */}
-//       <div className="mt-8">
-//         <h2 className="text-base font-semibold text-gray-800 pb-2 border-b border-gray-100">
-//           Breakdown
-//         </h2>
-
-//         <div className="mt-4 space-y-2">
-//           {breakdown.map((pos, i) => {
-//             const widthPct = (Math.abs(pos.pnl) / maxAbsPnl) * 100;
-//             const isNegative = pos.pnl < 0;
-//             const label = `${pos.instrument} (${pos.product})`;
-
-//             return (
-//               <div key={i} className="flex items-center gap-2">
-//                 <div className="flex-1 flex items-center">
-//                   <div
-//                     className={`h-5 rounded-sm ${isNegative ? "bg-orange-400" : "bg-blue-500"}`}
-//                     style={{ width: `${widthPct}%`, minWidth: "2px" }}
-//                   />
-//                   <span className="ml-2 text-[12px] text-gray-500 whitespace-nowrap">
-//                     {label}
-//                   </span>
-//                 </div>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
 import { useState, useEffect } from "react";
 import { HiOutlineDownload, HiSearch } from "react-icons/hi";
-import { RiArrowUpSLine, RiArrowDownSLine } from "react-icons/ri";
+import { RiArrowUpSLine, RiArrowDownSLine, RiSoundModuleFill } from "react-icons/ri";
 import { useDemoTradeStore } from "../store/useDemoTradeStore";
+import ExitConfirmModal from "../components/modal/ExitConfirmModal";
+import { RowContextMenu } from "../components/modal/RowContextMenu";
 
 function formatNumber(n: number) {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** Returns true only if the trade belongs to today (compares local date) */
+function isTodayTrade(t: any): boolean {
+  const dateStr: string | undefined = t.createdAt ?? t.opened_at ?? t.created_at;
+  if (!dateStr) return true; // no date field → include (safe fallback)
+  const tradeDate = new Date(dateStr);
+  const today = new Date();
+  return (
+    tradeDate.getFullYear() === today.getFullYear() &&
+    tradeDate.getMonth() === today.getMonth() &&
+    tradeDate.getDate() === today.getDate()
+  );
+}
+
+// ─── Full-page Empty State ─────────────────────────────────────────────────────
+function NoPositionsPage() {
+  return (
+    <div className="min-h-full flex flex-col items-center justify-start px-6 pt-16 bg-white text-center">
+      <svg
+        width="64"
+        height="64"
+        viewBox="0 0 64 64"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="mb-5 text-gray-200"
+      >
+        <rect x="4" y="36" width="12" height="22" rx="3" fill="currentColor" />
+        <rect x="20" y="24" width="12" height="34" rx="3" fill="currentColor" />
+        <rect x="36" y="12" width="12" height="46" rx="3" fill="currentColor" />
+        <rect x="52" y="28" width="8" height="30" rx="3" fill="currentColor" />
+        <line x1="2" y1="9" x2="62" y2="9" stroke="#E5E7EB" strokeWidth="1.5" strokeDasharray="4 3" />
+      </svg>
+      <p className="text-[15px] text-gray-400 mb-5">You don't have any position yet</p>
+      <div>
+        <button className="px-4 py-2 bg-blue-500 text-white rounded-sm">Get started</button>
+      </div>
+    </div>
+  );
+}
+
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white">
+    <div className="flex items-center gap-1.5 px-2 py-1 border border-gray-200 bg-white rounded">
       <HiSearch className="text-gray-400 text-sm shrink-0" />
       <input
         type="text"
         placeholder="Search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent border-none outline-none text-xs text-gray-700 w-[120px]"
+        className="bg-transparent border-none outline-none text-xs text-gray-700 w-12"
       />
     </div>
   );
 }
 
-function SectionHeader({
-  title, count, collapsed, onToggle, searchVal, onSearch, extraActions
+// ─── Positions Header ──────────────────────────────────────────────────────────
+function PositionsHeader({
+  title, count, collapsed, onToggle, searchVal, onSearch,
 }: {
   title: string; count: number; collapsed: boolean; onToggle: () => void;
-  searchVal: string; onSearch: (v: string) => void; extraActions?: React.ReactNode;
+  searchVal: string; onSearch: (v: string) => void;
 }) {
   return (
     <div className="flex items-center justify-between py-3.5 pb-2.5">
       <button onClick={onToggle} className="flex items-center gap-2 bg-none border-none cursor-pointer text-gray-800">
-        <span className="text-base font-semibold">{title} ({count})</span>
-        {collapsed
-          ? <RiArrowDownSLine className="text-lg text-gray-400" />
-          : <RiArrowUpSLine className="text-lg text-gray-400" />
-        }
+        <span className="text-base font-medium">{title} ({count})</span>
       </button>
       <div className="flex items-center gap-3">
         <SearchBox value={searchVal} onChange={onSearch} />
-        {extraActions}
+        <button className="flex items-center gap-0.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
+          <img src="./analytics.png" alt="Analytics" className="w-4 h-4 object-contain" />
+          Analytics
+        </button>
+        <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
+          <RiSoundModuleFill size={14} /> Settings
+        </button>
         <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
           <HiOutlineDownload size={14} /> Download
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─── History Header ────────────────────────────────────────────────────────────
+function HistoryHeader({
+  title, count, collapsed, onToggle, searchVal, onSearch, hideAll = false,
+}: {
+  title: string; count: number; collapsed: boolean; onToggle: () => void;
+  searchVal: string; onSearch: (v: string) => void; hideAll?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between py-3.5 pb-2.5">
+      <button onClick={onToggle} className="flex items-center gap-2 bg-none border-none cursor-pointer text-gray-800">
+        <span className="text-base font-medium">{title} {!hideAll && `(${count})`}</span>
+        {collapsed
+          ? <RiArrowDownSLine className="text-lg text-gray-400" />
+          : <RiArrowUpSLine className="text-lg text-gray-400" />}
+      </button>
+      {!hideAll && (
+        <div className="flex items-center gap-3">
+          <SearchBox value={searchVal} onChange={onSearch} />
+          <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
+            <HiOutlineDownload size={14} /> Download
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -501,14 +131,10 @@ interface DisplayRow {
   chg: number;
 }
 
+// ─── Positions Table ───────────────────────────────────────────────────────────
 function PositionsTable({
-  rows,
-  totalPnl,
-  showCheckbox,
-  selected,
-  onToggleRow,
-  onToggleAll,
-  onClosePosition,
+  rows, totalPnl, showCheckbox, selected,
+  onToggleRow, onToggleAll, onSingleExit, onBulkExit,
 }: {
   rows: DisplayRow[];
   totalPnl: number;
@@ -516,14 +142,15 @@ function PositionsTable({
   selected?: Set<number>;
   onToggleRow?: (i: number) => void;
   onToggleAll?: () => void;
-  onClosePosition?: (id: number) => void;
+  onSingleExit?: (row: DisplayRow) => void;
+  onBulkExit?: () => void;
 }) {
   const cols = showCheckbox
-    ? ["Product", "Instrument", "Qty.", "Avg.", "LTP", "P&L", "Chg.", "Action"]
+    ? ["Product", "Instrument", "Qty.", "Avg.", "LTP", "P&L", "Chg.", ""]
     : ["Product", "Instrument", "Qty.", "Avg.", "LTP", "P&L", "Chg."];
 
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto"> {/* Added relative here */}
       <table className="w-full border-collapse">
         <thead>
           <tr>
@@ -537,11 +164,13 @@ function PositionsTable({
                 />
               </th>
             )}
-            {cols.map((h) => (
+            {cols.map((h, idx) => (
               <th
-                key={h}
-                className={`px-3 py-2 text-[11px] font-semibold text-gray-400 text-left border-b border-gray-100 whitespace-nowrap ${["Qty.", "Avg.", "LTP", "P&L", "Chg."].includes(h) ? "text-right" : ""
-                  } ${h === "P&L" ? "bg-gray-50" : ""}`}
+                key={idx}
+                className={`px-3 py-2 text-[11px] text-gray-400 text-left border-b border-gray-100 whitespace-nowrap font-medium
+                  ${["Qty.", "Avg.", "LTP", "P&L", "Chg."].includes(h) ? "text-right" : ""}
+                  ${h === "P&L" ? "bg-gray-50" : ""}
+                `}
               >
                 {h}
               </th>
@@ -551,13 +180,16 @@ function PositionsTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={cols.length + (showCheckbox ? 1 : 0)} className="px-3 py-8 text-center text-gray-400 text-[13px] border-b border-gray-100">
+              <td
+                colSpan={cols.length + (showCheckbox ? 1 : 0)}
+                className="px-3 py-8 text-center text-gray-400 text-[13px] border-b border-gray-100"
+              >
                 No data found
               </td>
             </tr>
           ) : (
             rows.map((pos, i) => (
-              <tr key={pos.id} className="transition-colors duration-100 hover:bg-gray-50">
+              <tr key={pos.id} className="group transition-colors duration-100 hover:bg-gray-50">
                 {showCheckbox && (
                   <td className="px-3 py-3 border-b border-gray-100">
                     <input
@@ -573,9 +205,9 @@ function PositionsTable({
                     {pos.product}
                   </span>
                 </td>
-                <td className="px-3 py-3 text-[13px] text-gray-700 border-b border-gray-100 whitespace-nowrap">
+                <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap">
                   {pos.instrument}{" "}
-                  <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded">
                     {pos.exchange}
                   </span>
                 </td>
@@ -585,27 +217,28 @@ function PositionsTable({
                 <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap text-right">
                   {pos.avg.toFixed(2)}
                 </td>
-                <td className="px-3 py-3 text-[13px] text-gray-700 border-b border-gray-100 whitespace-nowrap text-right">
+                <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap text-right">
                   {formatNumber(pos.ltp)}
                 </td>
+                <td className={`px-3 py-3 text-[13px] font-medium border-b bg-gray-50 border-gray-100 whitespace-nowrap text-right ${pos.pnl > 0 ? "text-green-600" : pos.pnl < 0 ? "text-red-600" : "text-gray-400"
+                  }`}>
+                  {pos.pnl >= 0 ? "+" : ""}{formatNumber(pos.pnl)}
+                </td>
                 <td
-                  className={`px-3 py-3 text-[13px] font-medium border-b border-gray-100 whitespace-nowrap text-right bg-gray-50 ${pos.pnl >= 0 ? "text-green-600" : "text-red-500"
+                  className={`px-3 py-3 text-[13px] border-b border-gray-100 whitespace-nowrap text-right ${pos.pnl > 0
+                      ? "text-green-600"
+                      : pos.pnl < 0
+                        ? "text-red-600"
+                        : "text-gray-400"
                     }`}
                 >
-                  {pos.pnl >= 0 ? "+" : ""}
-                  {formatNumber(pos.pnl)}
-                </td>
-                <td className="px-3 py-3 text-[13px] text-gray-400 border-b border-gray-100 whitespace-nowrap text-right">
                   {pos.chg.toFixed(2)}%
                 </td>
                 {showCheckbox && (
-                  <td className="px-3 py-3 text-[13px] border-b border-gray-100 whitespace-nowrap">
-                    <button
-                      onClick={() => onClosePosition?.(pos.id)}
-                      className="text-red-500 hover:underline text-[12px]"
-                    >
-                      Exit
-                    </button>
+                  <td className="border-b border-gray-100 whitespace-nowrap p-0">
+                    <div className="flex items-stretch h-full">
+                      <RowContextMenu />
+                    </div>
                   </td>
                 )}
               </tr>
@@ -614,15 +247,27 @@ function PositionsTable({
         </tbody>
         {rows.length > 0 && (
           <tfoot>
-            <tr>
-              <td colSpan={showCheckbox ? 5 : 4}></td>
-              <td className="px-3 py-3 text-[13px] text-gray-600 text-right whitespace-nowrap">Total P&L</td>
-              <td className={`px-3 py-3 text-[13px] font-semibold text-right whitespace-nowrap bg-gray-50 ${totalPnl >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {totalPnl >= 0 ? "+" : ""}
-                {formatNumber(totalPnl)}
+            <tr className="">
+              {showCheckbox && <td className="px-3 py-3 w-8" />}
+              <td colSpan={4} className="px-3 py-3">
+                {showCheckbox && selected && selected.size > 0 && onBulkExit && (
+                  <div className="absolute left-3 bottom-3"> {/* Absolute positioning */}
+                    <button
+                      onClick={onBulkExit}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-medium rounded transition-colors whitespace-nowrap shadow-md"
+                    >
+                      Exit {selected.size} Positions
+                    </button>
+                  </div>
+                )}
               </td>
-              <td></td>
-              {showCheckbox && <td></td>}
+              <td className="px-3 py-3 text-[13px] text-gray-600 text-right whitespace-nowrap font-medium">
+                Total P&L
+              </td>
+              <td className={`px-3 py-3 text-[13px] text-right whitespace-nowrap font-medium ${totalPnl >= 0 ? "text-green-600" : "text-red-500"}`}>
+                {totalPnl >= 0 ? "+" : ""}{formatNumber(totalPnl)}
+              </td>
+              {showCheckbox && <td className="w-8" />}
             </tr>
           </tfoot>
         )}
@@ -631,27 +276,31 @@ function PositionsTable({
   );
 }
 
+// ─── Main Component ────────────────────────────────────────────────────────────
 export default function Positions() {
-  const { trades, loading, fetchTrades, initLiveQuoteListener, liveQuotes, closeTrade } = useDemoTradeStore();
+  const { trades, loading, fetchTrades, initLiveQuoteListener, liveQuotes, closeTrade } =
+    useDemoTradeStore();
 
   const [positionsCollapsed, setPositionsCollapsed] = useState(false);
-  const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(true);
   const [positionSearch, setPositionSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
+  const [modalPositions, setModalPositions] = useState<DisplayRow[]>([]);
+  const [showModal, setShowModal] = useState(false);
+
   useEffect(() => {
     fetchTrades();
-    initLiveQuoteListener(); // ⬅️ socket se real-time ticks suno, polling nahi
-
-    // trades list ko occasionally refresh karo (naye trades, status changes pick karne ke liye)
-    // Yeh polling P&L ke liye NAHI hai, sirf list sync ke liye — light hai
+    initLiveQuoteListener();
     const interval = setInterval(() => fetchTrades(), 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const openTrades = trades.filter((t) => t.status === "OPEN");
-  const closedTrades = trades.filter((t) => t.status === "CLOSED");
+  // ── Filter: only today's trades ──────────────────────────────────────────────
+  const todayTrades = trades.filter(isTodayTrade);
+  const openTrades = todayTrades.filter((t) => t.status === "OPEN");
+  const closedTrades = todayTrades.filter((t) => t.status === "CLOSED");
 
   const toDisplayRow = (t: any): DisplayRow => {
     const liveLtp = liveQuotes[t.token]?.ltp ?? t.entry_price;
@@ -662,7 +311,6 @@ export default function Positions() {
           ? (liveLtp - t.entry_price) * t.quantity
           : (t.entry_price - liveLtp) * t.quantity;
     const chg = t.entry_price > 0 ? ((liveLtp - t.entry_price) / t.entry_price) * 100 : 0;
-
     return {
       id: t.id,
       product: t.transaction_type,
@@ -687,30 +335,48 @@ export default function Positions() {
   const positionsTotalPnl = filteredPositions.reduce((sum, p) => sum + p.pnl, 0);
   const historyTotalPnl = filteredHistory.reduce((sum, p) => sum + p.pnl, 0);
 
-  const toggleRow = (i: number) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-  };
+  // Breakdown = today open + closed, sorted by abs pnl
+  const breakdown = [...openTrades, ...closedTrades]
+    .map(toDisplayRow)
+    .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
 
-  const toggleAll = () => {
-    if (selected.size === filteredPositions.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filteredPositions.map((_, i) => i)));
-    }
-  };
-
-  const handleClosePosition = async (id: number) => {
-    await closeTrade(id);
-  };
-
-  const breakdown = [...openTrades, ...closedTrades].map(toDisplayRow).sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
   const maxAbsPnl = Math.max(...breakdown.map((p) => Math.abs(p.pnl)), 1);
 
+  const toggleRow = (i: number) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+
+  const toggleAll = () =>
+    selected.size === filteredPositions.length
+      ? setSelected(new Set())
+      : setSelected(new Set(filteredPositions.map((_, i) => i)));
+
+  const handleBulkExit = () => {
+    setModalPositions(filteredPositions.filter((_, i) => selected.has(i)));
+    setShowModal(true);
+  };
+
+  const handleSingleExit = (row: DisplayRow) => {
+    setModalPositions([row]);
+    setShowModal(true);
+  };
+
+  const handleModalConfirm = async () => {
+    for (const pos of modalPositions) await closeTrade(pos.id);
+    setShowModal(false);
+    setModalPositions([]);
+    setSelected(new Set());
+  };
+
+  const handleModalCancel = () => {
+    setShowModal(false);
+    setModalPositions([]);
+  };
+
+  // ── Loading state ─────────────────────────────────────────────────────────────
   if (loading && trades.length === 0) {
     return (
       <div className="min-h-full px-6 pb-6 text-gray-800 flex items-center justify-center h-[400px]">
@@ -719,27 +385,31 @@ export default function Positions() {
     );
   }
 
+  // ── No trades today → full-page empty state ───────────────────────────────────
+  if (todayTrades.length === 0) {
+    return <NoPositionsPage />;
+  }
+
+  // ── Normal render ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-full px-6 pb-6 text-gray-800 text-[13px] bg-white">
-      <SectionHeader
+      {showModal && (
+        <ExitConfirmModal
+          positions={modalPositions}
+          onConfirm={handleModalConfirm}
+          onCancel={handleModalCancel}
+        />
+      )}
+
+      {/* Positions */}
+      <PositionsHeader
         title="Positions"
         count={filteredPositions.length}
         collapsed={positionsCollapsed}
         onToggle={() => setPositionsCollapsed((p) => !p)}
         searchVal={positionSearch}
         onSearch={setPositionSearch}
-        extraActions={
-          <>
-            <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
-              Analytics
-            </button>
-            <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-blue-500 text-xs font-medium">
-              Settings
-            </button>
-          </>
-        }
       />
-
       {!positionsCollapsed && (
         <PositionsTable
           rows={filteredPositions}
@@ -748,44 +418,59 @@ export default function Positions() {
           selected={selected}
           onToggleRow={toggleRow}
           onToggleAll={toggleAll}
-          onClosePosition={handleClosePosition}
+          onSingleExit={handleSingleExit}
+          onBulkExit={handleBulkExit}
         />
       )}
 
+      {/* Day's History */}
       <div className="mt-6">
-        <SectionHeader
+        <HistoryHeader
           title="Day's history"
           count={filteredHistory.length}
           collapsed={historyCollapsed}
           onToggle={() => setHistoryCollapsed((p) => !p)}
           searchVal={historySearch}
           onSearch={setHistorySearch}
+          hideAll={historyCollapsed}
         />
-
         {!historyCollapsed && (
-          <PositionsTable rows={filteredHistory} totalPnl={historyTotalPnl} showCheckbox={false} />
+          <PositionsTable
+            rows={filteredHistory}
+            totalPnl={historyTotalPnl}
+            showCheckbox={false}
+          />
         )}
       </div>
 
+      {/* Breakdown — today only */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-gray-800 pb-2 border-b border-gray-100">
+        <h2 className="text-base text-gray-800 pb-2 border-b border-gray-100 font-medium">
           Breakdown
         </h2>
-
         <div className="mt-4 space-y-2">
           {breakdown.map((pos) => {
-            const widthPct = (Math.abs(pos.pnl) / maxAbsPnl) * 100;
+            const widthPct = (Math.abs(pos.pnl) / maxAbsPnl) * 45;
             const isNegative = pos.pnl < 0;
-            const label = `${pos.instrument} (${pos.product})`;
-
             return (
-              <div key={pos.id} className="flex items-center gap-2">
-                <div className="flex-1 flex items-center">
-                  <div
-                    className={`h-5 rounded-sm ${isNegative ? "bg-orange-400" : "bg-blue-500"}`}
-                    style={{ width: `${widthPct}%`, minWidth: "2px" }}
-                  />
-                  <span className="ml-2 text-[12px] text-gray-500 whitespace-nowrap">{label}</span>
+              <div key={pos.id} className="flex items-center">
+                {/* Left — loss bar */}
+                <div className="flex-1 flex items-center justify-end">
+                  {isNegative
+                    ? <div className="h-2 bg-orange-400" style={{ width: `${widthPct}%` }} />
+                    : <div style={{ width: `${widthPct}%` }} />}
+                </div>
+
+                {/* Center label */}
+                <span className="shrink-0 px-2 text-[12px] text-gray-500 whitespace-nowrap">
+                  {pos.instrument} ({pos.product})
+                </span>
+
+                {/* Right — profit bar */}
+                <div className="flex-1 flex items-center justify-start">
+                  {!isNegative
+                    ? <div className="h-2 bg-blue-500" style={{ width: `${widthPct}%` }} />
+                    : <div style={{ width: `${widthPct}%` }} />}
                 </div>
               </div>
             );

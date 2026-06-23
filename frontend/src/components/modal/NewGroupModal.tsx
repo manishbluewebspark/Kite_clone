@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 const GROUP_COLORS = [
   "#888888",
@@ -33,7 +33,7 @@ export default function NewGroupModal({ isOpen, onClose, onCreate }: NewGroupMod
 
   return (
     <div
-      className="mx-3 mb-3 rounded border p-3"
+      className="mx-3 mb-30 rounded border p-3"
       style={{
         borderColor: "var(--border-overlay-20)",
         backgroundColor: "var(--color-primary)",
