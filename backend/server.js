@@ -154,12 +154,33 @@ process.on("unhandledRejection", (reason) => {
   console.error("🔴 Unhandled Rejection:", reason);
 });
 
-// ── App + Socket.io setup ─────────────────────────────────────────────────────
 const app = express();
 const server = http.createServer(app);
 
+// ⬅️ CORS origins — dev + prod dono
+const allowedOrigins = [
+  process.env.FRONTEND_URL,           // .env se
+  "http://3.108.103.221",             // EC2 IP HTTP
+  "https://3.108.103.221",            // EC2 IP HTTPS
+  "http://localhost:5173",            // Vite dev
+  "http://localhost:3000",
+].filter(Boolean); // undefined/null filter karo
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Postman/curl jaisi no-origin requests bhi allow karo
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn("CORS blocked:", origin);
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
+  credentials: true,
+};
+
 const io = new Server(server, {
-  cors: { origin: process.env.FRONTEND_URL, credentials: true },
+  cors: corsOptions,
   pingTimeout: 60000,
   pingInterval: 25000,
 });
@@ -177,7 +198,7 @@ io.on("connection", (socket) => {
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(cors(corsOptions)); // ⬅️ same corsOptions use karo
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api", apiRoutes);
