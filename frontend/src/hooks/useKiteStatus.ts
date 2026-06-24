@@ -45,7 +45,7 @@ export const useKiteStatus = () => {
 
   const checkStatus = async () => {
     try {
-      const { data } = await axiosInstance.get("/api/kite/status");
+      const { data } = await axiosInstance.get("/kite/status");
       setConnected(data.connected);
     } catch {
       setConnected(false);
@@ -61,7 +61,7 @@ export const useKiteStatus = () => {
 
     if (accessToken) {
       try {
-        await axiosInstance.post("/api/kite/set-token", {
+        await axiosInstance.post("/kite/set-token", {
           access_token: accessToken,
         });
         console.log("✅ Kite access_token sent to backend");
@@ -78,7 +78,7 @@ export const useKiteStatus = () => {
 
   const connectKite = async () => {
     try {
-      const { data } = await axiosInstance.get("/api/kite/login-url");
+      const { data } = await axiosInstance.get("/kite/login-url");
       window.location.href = data.url;
     } catch (err) {
       console.error("Kite login URL fetch failed:", err);
