@@ -15,4 +15,13 @@ const sequelize = new Sequelize(
   }
 );
 
+// 🔌 DB se connect + models sync karo. server.js se yahi function call hoga.
+export const connectDB = async () => {
+  await sequelize.authenticate();
+  console.log("✅ PostgreSQL Connected");
+
+  await sequelize.sync({ alter: true });
+  console.log("✅ Models Synced");
+};
+
 export default sequelize;

@@ -319,7 +319,7 @@ export default function Positions() {
       netQty: t.transaction_type === "BUY" ? t.quantity : -t.quantity,
       avg: t.entry_price,
       ltp: t.status === "CLOSED" ? t.exit_price ?? liveLtp : liveLtp,
-      pnl,
+      pnl, 
       chg,
     };
   };
