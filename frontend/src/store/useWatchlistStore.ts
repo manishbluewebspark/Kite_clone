@@ -61,7 +61,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
   fetchWatchlist: async () => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axiosInstance.get("/api/watchlist", {
+      const { data } = await axiosInstance.get("/watchlist", {
         params: { groupNo: get().groupNo },
       });
       if (data.success) {
@@ -75,7 +75,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
 
   addStock: async (symbol, exchange, token) => {
     try {
-      const { data } = await axiosInstance.post("/api/watchlist", {
+      const { data } = await axiosInstance.post("/watchlist", {
         symbol, exchange, token, groupNo: get().groupNo,
       });
       if (data.success) {
@@ -90,7 +90,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
   // ── AddWatchlist modal ke onAdd se call hoga (holding response ke saath) ──
   addStockFromHolding: async (holding) => {
     try {
-      const { data } = await axiosInstance.post("/api/watchlist", {
+      const { data } = await axiosInstance.post("/watchlist", {
         symbol: holding.name,
         exchange: holding.exch_seg,
         token: holding.token,
@@ -107,7 +107,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
 
   removeStock: async (id) => {
     try {
-      await axiosInstance.delete(`/api/watchlist/${id}`);
+      await axiosInstance.delete(`/watchlist/${id}`);
       set({ entries: get().entries.filter((e) => e.id !== id) });
     } catch (err: any) {
       set({ error: err.message });
@@ -120,7 +120,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
 
     try {
       const tokens = entries.map((e) => ({ exchange: e.exchange, token: e.token }));
-      const { data } = await axiosInstance.post("/api/market/quotes", { tokens });
+      const { data } = await axiosInstance.post("/market/quotes", { tokens });
       if (data.success) {
         set({ quotes: data.data });
       }

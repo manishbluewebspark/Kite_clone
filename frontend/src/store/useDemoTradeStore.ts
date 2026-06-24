@@ -52,7 +52,7 @@ export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
   fetchTrades: async (status) => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axiosInstance.get("/api/demo-trades", {
+      const { data } = await axiosInstance.get("/demo-trades", {
         params: status ? { status } : {},
       });
       if (data.success) {
@@ -78,7 +78,7 @@ export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
   openTrade: async (tradeData) => {
     set({ error: null });
     try {
-      const { data } = await axiosInstance.post("/api/demo-trades/open", tradeData);
+      const { data } = await axiosInstance.post("/demo-trades/open", tradeData);
       if (data.success) {
         set({ trades: [data.data, ...get().trades] });
         return data.data;
@@ -93,7 +93,7 @@ export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
   closeTrade: async (id) => {
     set({ error: null });
     try {
-      const { data } = await axiosInstance.post(`/api/demo-trades/${id}/close`);
+      const { data } = await axiosInstance.post(`/demo-trades/${id}/close`);
       if (data.success) {
         set({
           trades: get().trades.map((t) => (t.id === id ? data.data : t)),

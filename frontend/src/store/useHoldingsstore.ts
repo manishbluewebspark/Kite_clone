@@ -45,7 +45,7 @@ export const useHoldingsStore = create<HoldingsState>((set) => ({
   fetchHoldings: async () => {
     set({ loading: true });
     try {
-      const { data } = await axiosInstance.get("/api/market/holdings", {
+      const { data } = await axiosInstance.get("/market/holdings", {
         withCredentials: true,
       });
 

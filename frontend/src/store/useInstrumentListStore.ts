@@ -53,7 +53,7 @@ export const useInstrumentListStore = create<InstrumentListState>((set, get) => 
   fetchPage: async () => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axiosInstance.get("/api/instruments/list", {
+      const { data } = await axiosInstance.get("/instruments/list", {
         params: { page: get().page, limit: LIMIT, q: get().query },
       });
       if (data.success) {
