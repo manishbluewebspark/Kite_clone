@@ -164,6 +164,8 @@ const allowedOrigins = [
   "https://3.108.103.221",            // EC2 IP HTTPS
   "http://localhost:5173",            // Vite dev
   "http://localhost:3000",
+  "http://kite.softwaregrowthsetu.com",
+  "https://kite.softwaregrowthsetu.com",
 ].filter(Boolean); // undefined/null filter karo
 
 const corsOptions = {
