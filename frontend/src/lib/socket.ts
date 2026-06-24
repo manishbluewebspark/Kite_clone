@@ -24,15 +24,12 @@
 
 import { io } from "socket.io-client";
 
-// Socket ke liye sirf origin chahiye, API path nahi
-// Prod me same origin se connect karo (empty string = current domain)
-// Dev me localhost:5000 backend directly
-const SOCKET_URL = import.meta.env.PROD
-  ? ""                          // prod: same origin (nginx proxy karega /socket.io/)
-  : "http://localhost:5000";    // dev: direct backend
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL || window.location.origin;
 
 export const socket = io(SOCKET_URL, {
   withCredentials: true,
+  transports: ["websocket", "polling"],
 });
 
 socket.on("connect", () => {
@@ -40,13 +37,9 @@ socket.on("connect", () => {
 });
 
 socket.on("disconnect", (reason) => {
-  console.log("❌ Socket disconnected. Reason:", reason);
+  console.log("❌ Socket disconnected:", reason);
 });
 
 socket.on("connect_error", (err) => {
   console.log("⚠️ Connect error:", err.message);
-});
-
-socket.on("market:update", (payload) => {
-  console.log("📊 market:update received:", payload);
 });
