@@ -3,7 +3,7 @@ import express from "express";
 import authRoutes from "./authRoutes.js";
 import userRoutes from "./userRoutes.js";
 import fundRoutes from "./fundRoutes.js";
-import marketRoutes from "./marketRoutes.js";
+import marketRoutes from "./Marketroutes.js";
 import watchlistRoutes from "./watchlistRoutes.js";
 import instrumentRoutes from "./instrumentRoutes.js";
 import demoTradeRoutes from "./demoTradeRoutes.js";
