@@ -20,7 +20,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api", // ⬅️ env variable use karo
+  baseURL: import.meta.env.VITE_API_URL || "/v1", // ⬅️ env variable use karo
   withCredentials: true,
 });
 
