@@ -138,7 +138,8 @@ import kiteAuthRoutes from "./routes/kiteAuthRoutes.js";
 import { startAngelTokenRefreshJob } from "./cron/angelTokenRefresh.js";
 import { startAngelMarketSocket, subscribeInstrument } from "./services/angelMarketSocket.js";
 import { getExchangeType } from "./utils/exchangeMap.js";
-import { loadKiteInstruments } from "./services/kiteService.js";
+// import { loadKiteInstruments } from "./services/kiteService.js";
+import { loadInstruments } from "./services/instrumentService.js";
 import DemoTrade from "./models/DemoTrade.js";
 
 import { subscribeKiteToken } from "./services/kiteTickerService.js";
@@ -219,57 +220,57 @@ function withTimeout(promise, ms, label) {
   ]);
 }
 
-// ── Re-subscribe open demo trades on server restart ───────────────────────────
-// async function resubscribeOpenTrades() {
-//   try {
-//     const openTrades = await DemoTrade.findAll({ where: { status: "OPEN" } });
-
-//     const uniqueTokens = new Map();
-//     openTrades.forEach((t) => uniqueTokens.set(t.token, t.exchange));
-
-//     let subscribed = 0;
-//     for (const [token, exchange] of uniqueTokens) {
-//       try {
-//         const exchangeType = getExchangeType(exchange);
-//         subscribeInstrument(token, exchangeType);
-//         subscribed++;
-//       } catch (err) {
-//         console.error(`Resubscribe failed for ${token}:`, err.message);
-//       }
-//     }
-
-//     console.log(
-//       `📡 Re-subscribed ${subscribed}/${uniqueTokens.size} open demo-trade instruments`
-//     );
-//   } catch (err) {
-//     console.error("⚠️  resubscribeOpenTrades failed:", err.message);
-//   }
-// }
-
-
-// resubscribeOpenTrades function update karo
+// ── Re-subscribe open demo trades using angel smart api ───────────────────────────
 async function resubscribeOpenTrades() {
   try {
     const openTrades = await DemoTrade.findAll({ where: { status: "OPEN" } });
 
-    const uniqueTokens = new Set();
-    openTrades.forEach((t) => uniqueTokens.add(t.token));
+    const uniqueTokens = new Map();
+    openTrades.forEach((t) => uniqueTokens.set(t.token, t.exchange));
 
     let subscribed = 0;
-    for (const token of uniqueTokens) {
+    for (const [token, exchange] of uniqueTokens) {
       try {
-        subscribeKiteToken(token); // ⬅️ Kite Ticker pe subscribe
+        const exchangeType = getExchangeType(exchange);
+        subscribeInstrument(token, exchangeType);
         subscribed++;
       } catch (err) {
         console.error(`Resubscribe failed for ${token}:`, err.message);
       }
     }
 
-    console.log(`📡 Re-subscribed ${subscribed}/${uniqueTokens.size} tokens on Kite Ticker`);
+    console.log(
+      `📡 Re-subscribed ${subscribed}/${uniqueTokens.size} open demo-trade instruments`
+    );
   } catch (err) {
-    console.error("⚠️ resubscribeOpenTrades failed:", err.message);
+    console.error("⚠️  resubscribeOpenTrades failed:", err.message);
   }
 }
+
+
+// resubscribeOpenTrades function from kite 
+// async function resubscribeOpenTrades() {
+//   try {
+//     const openTrades = await DemoTrade.findAll({ where: { status: "OPEN" } });
+
+//     const uniqueTokens = new Set();
+//     openTrades.forEach((t) => uniqueTokens.add(t.token));
+
+//     let subscribed = 0;
+//     for (const token of uniqueTokens) {
+//       try {
+//         subscribeKiteToken(token); // ⬅️ Kite Ticker pe subscribe
+//         subscribed++;
+//       } catch (err) {
+//         console.error(`Resubscribe failed for ${token}:`, err.message);
+//       }
+//     }
+
+//     console.log(`📡 Re-subscribed ${subscribed}/${uniqueTokens.size} tokens on Kite Ticker`);
+//   } catch (err) {
+//     console.error("⚠️ resubscribeOpenTrades failed:", err.message);
+//   }
+// }
 
 // ── Market data pipeline (non-blocking background task) ───────────────────────
 async function initMarketData() {
@@ -287,11 +288,12 @@ async function initMarketData() {
 
   // 3. Kite instrument dump load karo (free public CSV, no auth)
   try {
-    await withTimeout(
-      loadKiteInstruments(),
-      60_000,
-      "loadKiteInstruments"
-    );
+    // await withTimeout(
+    //   loadKiteInstruments(),
+    //   60_000,
+    //   "loadKiteInstruments"
+    // );
+    await withTimeout(loadInstruments(), 60_000, "loadInstruments");
   } catch (err) {
     console.error("⚠️  Kite instruments load failed:", err.message);
   }
