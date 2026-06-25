@@ -6,7 +6,11 @@ interface SelectedPosition {
   instrument: string;
   product: string;
   netQty: number;
-  pnl: number;
+  price: string;
+  type: string;
+  validity: string;
+  transaction_type: string;
+  exchange: string
 }
 
 interface ExitConfirmModalProps {
@@ -30,8 +34,6 @@ export default function ExitConfirmModal({ positions, onConfirm, onCancel }: Exi
     return () => document.removeEventListener("keydown", handleKey);
   }, [onCancel]);
 
-  const totalPnl = positions.reduce((sum, p) => sum + p.pnl, 0);
-
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
@@ -45,54 +47,86 @@ export default function ExitConfirmModal({ positions, onConfirm, onCancel }: Exi
     }
   };
 
+  // Centralized styles
+  const tableStyles = {
+    header: "text-left text-[11px] text-gray-400 font-normal pb-2",
+    cell: "text-left text-[13px] text-gray-700 py-2",
+    row: "border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-default"
+  };
+
+  const columnWidths = {
+    instrument: "w-[40%]",
+    qty: "w-[9%]",
+    price: "w-[9%]",
+    type: "w-[9%]",
+    product: "w-[9%]",
+    validity: "w-[9%]"
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-white/60"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div className="bg-white rounded-sm shadow-xl w-[440px] max-w-[95vw] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-[15px] font-medium text-gray-800">
-            Exit {positions.length} Position{positions.length > 1 ? "s" : ""}
+      <div className="bg-white rounded-sm shadow-xl max-w-3xl overflow-hidden">
+        {/* Header - sirf text ke neeche border */}
+        <div className="px-5 pt-4 pb-2"> {/* Padding adjusted */}
+          <h2 className="text-[16px] font-medium text-gray-800 border-b border-gray-200 pb-3">
+            Exit position{positions.length > 1 ? "s" : ""} ({positions.length})
           </h2>
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </button>
         </div>
 
         {/* Position List */}
-        <div className="px-5 py-3 max-h-[280px] overflow-y-auto">
-          <table className="w-full">
+        <div className="px-5 py-1 max-h-70 overflow-y-auto">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className={columnWidths.instrument} />
+              <col className={columnWidths.qty} />
+              <col className={columnWidths.price} />
+              <col className={columnWidths.type} />
+              <col className={columnWidths.product} />
+              <col className={columnWidths.validity} />
+            </colgroup>
             <thead>
-              <tr>
-                <th className="text-[11px] text-gray-400 font-normal text-left pb-2">Instrument</th>
-                <th className="text-[11px] text-gray-400 font-normal text-right pb-2">Qty</th>
-                <th className="text-[11px] text-gray-400 font-normal text-right pb-2 bg-gray-50 px-2">P&amp;L</th>
+              <tr className="border-b border-gray-200"> {/* Header ke neeche border */}
+                <th className={tableStyles.header}></th>
+                <th className={tableStyles.header}>Qty</th>
+                <th className={tableStyles.header}>Price</th>
+                <th className={tableStyles.header}>Type</th>
+                <th className={tableStyles.header}>Product</th>
+                <th className={tableStyles.header}>Validity</th>
               </tr>
             </thead>
             <tbody>
               {positions.map((pos) => (
-                <tr key={pos.id} className="border-t border-gray-50">
-                  <td className="py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                        {pos.product}
+                <tr
+                  key={pos.id}
+                  className={tableStyles.row} // Har row mein border-b
+                >
+                  <td className={tableStyles.cell}>
+                    <div className="flex items-center gap-4">
+                      <span className="bg-red-100 px-2.5 py-0.5 text-red-500 text-[9px] whitespace-nowrap">SELL</span>
+                      <span>
+                        {pos.instrument} <span className="text-[10px] text-gray-600">({pos.exchange})</span>
                       </span>
-                      <span className="text-[13px] text-gray-700">{pos.instrument}</span>
                     </div>
                   </td>
-                  <td className="py-2.5 text-[13px] text-gray-500 text-right">
-                    {pos.netQty > 0 ? `+${pos.netQty}` : pos.netQty}
+                  <td className={tableStyles.cell}>
+                    {pos.netQty > 0 ? `${pos.netQty}` : pos.netQty}
                   </td>
-                  <td className={`py-2.5 text-[13px] font-medium text-right px-2 bg-gray-50 ${pos.pnl >= 0 ? "text-green-600" : "text-red-500"}`}>
-                    {pos.pnl >= 0 ? "+" : ""}{formatNumber(pos.pnl)}
+                  <td className={tableStyles.cell}>
+                    -
+                  </td>
+                  <td className={tableStyles.cell}>
+                    {pos.type}
+                  </td>
+                  <td className={tableStyles.cell}>
+                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded">
+                      {pos.product}
+                    </span>
+                  </td>
+                  <td className={tableStyles.cell}>
+                    {pos.validity}
                   </td>
                 </tr>
               ))}
@@ -100,27 +134,26 @@ export default function ExitConfirmModal({ positions, onConfirm, onCancel }: Exi
           </table>
         </div>
 
-        {/* Actions */}
-<div className="flex items-center gap-3 px-2 py-4 border-t border-gray-100">
-  <div className="flex items-center gap-3 ml-auto">
-    <button
-      onClick={handleConfirm}
-      disabled={isLoading}
-      className={`flex-1 py-1.5 px-8 rounded-xs bg-blue-500 hover:bg-blue-600 text-white text-[13px] font-medium transition-colors ${
-        isLoading ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-    >
-      {isLoading ? 'Exiting...' : 'Exit'}
-    </button>
-    <button
-      onClick={onCancel}
-      disabled={isLoading}
-      className="flex-1 py-1.5 px-8 rounded-xs border border-gray-200 text-[13px] text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      Close
-    </button>
-  </div>
-</div>
+        {/* Actions - sirf buttons ke upar border */}
+        <div className="px-5 pb-4 pt-2"> {/* Padding adjusted */}
+          <div className="flex items-center justify-end gap-3 ">
+            <button
+              onClick={handleConfirm}
+              disabled={isLoading}
+              className={`py-1.5 px-6 rounded-xs bg-blue-500 hover:bg-blue-600 text-white text-[13px] font-medium transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+            >
+              {isLoading ? 'Exiting...' : 'Exit'}
+            </button>
+            <button
+              onClick={onCancel}
+              disabled={isLoading}
+              className="py-1.5 px-7 rounded-xs border border-gray-400 text-[13px] text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -198,11 +198,11 @@ export default function OrderModal({
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-[9999]" onClick={onClose} />
+      <div className="fixed inset-0 z-9999" onClick={onClose} />
 
       <div
         ref={modalRef}
-        className="fixed z-[10000]"
+        className="fixed z-10000"
         style={modalPositionStyle}
       >
         <div
@@ -271,7 +271,7 @@ export default function OrderModal({
                   {tab.label}
                   {activeTab === tab.key && (
                     <span
-                      className="absolute left-0 right-0 -bottom-px h-[2px]"
+                      className="absolute left-0 right-0 -bottom-px h-0.5"
                       style={{ backgroundColor: accent }}
                     />
                   )}
@@ -284,7 +284,7 @@ export default function OrderModal({
           {/* ── Nudge popup ── */}
           {showNudge && (
             <div
-              className="absolute z-[10001] bg-white border border-gray-200 rounded-md shadow-lg p-3 w-[230px]"
+              className="absolute z-10001 bg-white border border-gray-200 rounded-md shadow-lg p-3 w-57.5"
               style={{ top: "88px", right: "12px" }}
             >
               <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -450,7 +450,7 @@ function QtyField({
         />
 
         {/* Up/Down arrows */}
-        <div className="flex flex-col w-[22px] opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        <div className="flex flex-col w-5.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           <button
             onClick={() => bump(1)}
             className="flex-1 flex items-center justify-center hover:bg-gray-100 border-b border-gray-400 text-gray-500"
@@ -467,7 +467,7 @@ function QtyField({
 
         {/* Right side */}
         <div className="flex items-stretch border-l border-gray-300">
-          <button className="w-[32px] flex items-center justify-center hover:bg-gray-200 text-gray-400">
+          <button className="w-8 flex items-center justify-center hover:bg-gray-200 text-gray-400">
             <Layers size={14} />
           </button>
         </div>

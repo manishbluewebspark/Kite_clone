@@ -127,7 +127,7 @@ export default function SearchView({
               </div>
 
               {/* RIGHT */}
-              <div className="flex items-center gap-[6px] shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {isHovered ? (
                   /* ── Hover: B / S / chart / info / + buttons ── */
                   <>
