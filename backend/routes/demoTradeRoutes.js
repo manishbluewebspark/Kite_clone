@@ -9,7 +9,21 @@ const router = express.Router();
 
 router.post("/open", authMiddleware, async (req, res) => {
   try {
-    const { symbol, name, exchange, token, transaction_type, quantity } = req.body;
+    const {
+      symbol,
+      name,
+      exchange,
+      token,
+      transaction_type,
+      quantity,
+      // ── New fields from OrderModal ──
+      product = "MIS",           // "MIS" (Intraday) | "NRML" (Overnight)
+      order_type = "MARKET",     // "MARKET" | "LIMIT" | "SL" | "SL-M"
+      validity = "DAY",          // "DAY" | "IOC" | "MINUTES"
+      price = 0,                 // Limit order price
+      trigger_price = 0,         // SL/SL-M trigger
+      market_protection = false,
+    } = req.body;
 
     if (!symbol || !exchange || !token || !transaction_type || !quantity) {
       return res.status(400).json({ success: false, message: "All fields required" });
@@ -34,11 +48,16 @@ router.post("/open", authMiddleware, async (req, res) => {
       token,
       transaction_type,
       quantity: Number(quantity),
+      product: product.toUpperCase(),
+      order_type: order_type.toUpperCase(),
+      validity: validity.toUpperCase(),
+      price: Number(price),
+      trigger_price: Number(trigger_price),
+      market_protection: Boolean(market_protection),
       entry_price: entryPrice,
       status: "OPEN",
     });
 
-    // ⬅️ NAYA: socket pe is instrument ko subscribe karo
     try {
       const exchangeType = getExchangeType(exchange);
       subscribeInstrument(token, exchangeType);
@@ -83,9 +102,10 @@ router.post("/:id/close", authMiddleware, async (req, res) => {
     const ltpData = await getLTP(trade.exchange, trade.symbol, trade.token);
     const exitPrice = parseFloat(ltpData.ltp);
 
-    const pnl = trade.transaction_type === "BUY"
-      ? (exitPrice - trade.entry_price) * trade.quantity
-      : (trade.entry_price - exitPrice) * trade.quantity;
+    const pnl =
+      trade.transaction_type === "BUY"
+        ? (exitPrice - trade.entry_price) * trade.quantity
+        : (trade.entry_price - exitPrice) * trade.quantity;
 
     await trade.update({
       exit_price: exitPrice,
@@ -94,7 +114,6 @@ router.post("/:id/close", authMiddleware, async (req, res) => {
       closed_at: new Date(),
     });
 
-    // ⬅️ NAYA: agar koi aur OPEN trade isi token ka nahi hai, to unsubscribe karo
     try {
       const otherOpenTrades = await DemoTrade.count({
         where: { token: trade.token, status: "OPEN" },
@@ -109,6 +128,7 @@ router.post("/:id/close", authMiddleware, async (req, res) => {
 
     res.json({ success: true, data: trade });
   } catch (err) {
+    console.error("Demo trade close error:", err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });

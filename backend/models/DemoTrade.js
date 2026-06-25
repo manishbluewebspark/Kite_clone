@@ -19,7 +19,7 @@ const DemoTrade = sequelize.define(
     },
     name: {
       type: DataTypes.STRING,
-      allowNull: true, // display name (formatted label)
+      allowNull: true,
     },
     exchange: {
       type: DataTypes.STRING,
@@ -37,9 +37,35 @@ const DemoTrade = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    // ── Order config fields ──────────────────────────────────────────────────
+    product: {
+      type: DataTypes.ENUM("MIS", "NRML"),
+      defaultValue: "MIS", // Intraday = MIS, Overnight = NRML
+    },
+    order_type: {
+      type: DataTypes.ENUM("MARKET", "LIMIT", "SL", "SL-M"),
+      defaultValue: "MARKET",
+    },
+    validity: {
+      type: DataTypes.ENUM("DAY", "IOC", "MINUTES"),
+      defaultValue: "DAY",
+    },
+    price: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0, // Limit order ke liye price, Market = 0
+    },
+    trigger_price: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0, // SL/SL-M ke liye
+    },
+    market_protection: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    // ── Trade lifecycle fields ───────────────────────────────────────────────
     entry_price: {
       type: DataTypes.FLOAT,
-      allowNull: false,
+      allowNull: false, // actual execution price (LTP at time of order)
     },
     exit_price: {
       type: DataTypes.FLOAT,
