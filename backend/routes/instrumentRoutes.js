@@ -6,6 +6,28 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // GET /api/instruments/search?q=SENSEX&exchange=BFO&limit=30
+// router.get("/search", authMiddleware, (req, res) => {
+//   try {
+//     const { q, exchange, limit } = req.query;
+
+//     if (getInstrumentCount() === 0) {
+//       return res.status(503).json({
+//         success: false,
+//         message: "Instrument list still loading, try again in a few seconds",
+//       });
+//     }
+
+//     const results = searchInstruments(q, {
+//       exchange,
+//       limit: limit ? parseInt(limit) : 30,
+//     });
+//     res.json({ success: true, count: results.length, data: results });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// });
+
+
 router.get("/search", authMiddleware, (req, res) => {
   try {
     const { q, exchange, limit } = req.query;
@@ -13,14 +35,16 @@ router.get("/search", authMiddleware, (req, res) => {
     if (getInstrumentCount() === 0) {
       return res.status(503).json({
         success: false,
-        message: "Instrument list still loading, try again in a few seconds",
+        message: "Instrument list loading, try again in a moment",
       });
     }
 
+    // ⬅️ q.trim().length < 2 check hatao — 1 char pe bhi search allow karo
     const results = searchInstruments(q, {
       exchange,
       limit: limit ? parseInt(limit) : 30,
     });
+
     res.json({ success: true, count: results.length, data: results });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

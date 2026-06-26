@@ -41,7 +41,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type Theme = "light" | "light";
+type Theme = "light" | "dark";
 
 interface ThemeState {
   theme: Theme;
@@ -55,7 +55,7 @@ export const useThemeStore = create<ThemeState>()(
       theme: "light",
 
       toggleTheme: () => {
-        const next = get().theme === "light" ? "light" : "light";
+        const next = get().theme === "light" ? "dark" : "light";
         document.documentElement.setAttribute("data-theme", next);
         set({ theme: next });
       },

@@ -100,13 +100,27 @@ export default function WatchlistPanel() {
   }, []);
 
   // ── Handlers ──
+  // const handleSearchChange = (val: string) => {
+  //   setSearchQuery(val);
+  //   setIsSearching(val.trim().length > 0);
+  //   if (val.trim().length > 0) {
+  //     setQuery(val);
+  //   }
+  // };
+
   const handleSearchChange = (val: string) => {
-    setSearchQuery(val);
-    setIsSearching(val.trim().length > 0);
-    if (val.trim().length > 0) {
-      setQuery(val);
-    }
-  };
+  setSearchQuery(val);
+
+  // ⬅️ 1 char pe bhi search mode active karo (pehle > 0 tha jo empty string pe false tha)
+  setIsSearching(val.length > 0);
+
+  if (val.length > 0) {
+    setQuery(val);
+  } else {
+    // Search clear hone par results bhi clear karo
+    setQuery("");
+  }
+};
 
   const handleSearchBlur = () => {
     if (!searchQuery.trim()) {

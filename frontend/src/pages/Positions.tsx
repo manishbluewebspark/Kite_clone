@@ -697,7 +697,7 @@ function PositionsTable({
                 >
                   {showCheckbox && (
                     <td className="px-3 py-3 border-b border-gray-100">
-                          <input
+                      <input
                         type="checkbox"
                         checked={isClosed ? false : (selected?.has(i) ?? false)}
                         onChange={() => !isClosed && onToggleRow?.(i)}
@@ -857,7 +857,8 @@ export default function Positions() {
       exchange: t.exchange,
       netQty: t.transaction_type === "BUY" ? t.quantity : -t.quantity,
       avg: t.entry_price,
-      ltp: t.status === "CLOSED" ? t.exit_price ?? liveLtp : liveLtp,
+      // ltp: t.status === "CLOSED" ? t.exit_price ?? liveLtp : liveLtp,
+      ltp: liveLtp,
       pnl,
       chg,
       validity: t.validity,
