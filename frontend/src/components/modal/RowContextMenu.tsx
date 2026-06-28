@@ -11,6 +11,7 @@ import { FiTrendingUp } from "react-icons/fi";
 import { LuExternalLink } from "react-icons/lu";
 
 interface RowContextMenuProps {
+  onExit?: () => void;
   onInfo?: () => void;
   onAdd?: () => void;
   onChart?: () => void;
@@ -180,9 +181,8 @@ export function RowContextMenu({
         onClick={handleOpen}
         onMouseLeave={scheduleClose}   // schedule close jab cursor bahar jaaye
         onMouseEnter={cancelClose}     // cancel karo agar cursor wapas aaye
-        className={`p-1 rounded hover:bg-gray-100 text-gray-500 transition-opacity ${
-          open ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        }`}
+        className={`p-1 rounded hover:bg-gray-100 text-gray-500 transition-opacity ${open ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
         aria-label="More options"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -232,9 +232,8 @@ export function RowContextMenu({
               <button
                 key={idx}
                 onClick={() => handleMenuAction(item.action)}
-                className={`w-full flex items-center justify-between px-4 py-2 hover:bg-gray-50 text-gray-700 text-left transition-colors ${
-                  item.hasTopBorder ? "border-t border-gray-100 mt-1" : ""
-                }`}
+                className={`w-full flex items-center justify-between px-4 py-2 hover:bg-gray-50 text-gray-700 text-left transition-colors ${item.hasTopBorder ? "border-t border-gray-100 mt-1" : ""
+                  }`}
               >
                 <span className="flex items-center gap-3">
                   <span className="text-gray-500">{item.icon}</span>

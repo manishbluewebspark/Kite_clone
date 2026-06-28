@@ -55,7 +55,7 @@ import express from "express";
 import { KiteConnect } from "kiteconnect";
 import { initKiteClient, isKiteConnected } from "../services/kiteService.js";
 import { subscribeKiteToken } from "../services/kiteTickerService.js";
-import DemoTrade from "../models/DemoTrade.js";
+import DemoTrade from "../models/DemoOrder.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();

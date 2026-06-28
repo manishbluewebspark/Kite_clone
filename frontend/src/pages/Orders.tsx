@@ -140,20 +140,28 @@
 
 // export default function Orders() {
 //   const [activeTab, setActiveTab] = useState("Orders");
-//   const [ordersCollapsed, setOrdersCollapsed] = useState(false);
-//   const [orderSearch, setOrderSearch] = useState("");
+//   const [executedCollapsed, setExecutedCollapsed] = useState(false);
+//   const [tradesCollapsed, setTradesCollapsed] = useState(false);
+//   const [executedSearch, setExecutedSearch] = useState("");
+//   const [tradesSearch, setTradesSearch] = useState("");
 
 //   const { trades, loading, fetchTrades } = useDemoTradeStore();
 
 //   useEffect(() => {
-//     fetchTrades(); // saare trades laao (OPEN + CLOSED)
-//     const interval = setInterval(() => fetchTrades(), 5000); // 5s polling, fresh data ke liye
+//     fetchTrades();
+//     const interval = setInterval(() => fetchTrades(), 5000);
 //     return () => clearInterval(interval);
 //   }, []);
 
-//   const filteredTrades = trades.filter((t) =>
-//     t.symbol.toLowerCase().includes(orderSearch.toLowerCase())
-//   );
+//   // ── CLOSED status → "Executed" section ───────────────────────────────────
+//   const executedTrades = trades
+//     .filter((t) => t.status === "CLOSED")
+//     .filter((t) => t.symbol.toLowerCase().includes(executedSearch.toLowerCase()));
+
+//   // ── OPEN status → "Trades" section ────────────────────────────────────────
+//   const openTrades = trades
+//     .filter((t) => t.status === "OPEN")
+//     .filter((t) => t.symbol.toLowerCase().includes(tradesSearch.toLowerCase()));
 
 //   if (loading && trades.length === 0) {
 //     return (
@@ -163,18 +171,84 @@
 //     );
 //   }
 
+//   const renderTradeRow = (trade: any) => (
+//     <tr key={trade.id} className="transition-colors duration-100 hover:bg-[var(--bg-overlay-08)]">
+//       <td className="px-3 py-3 text-[var(--text-on-dark-55)] text-xs border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//         {new Date(trade.opened_at).toLocaleTimeString("en-IN")}
+//       </td>
+//       <td className="px-3 py-3 text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//         <TypeBadge type={trade.transaction_type} />
+//       </td>
+//       <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//         <span>{trade.name}</span>
+//         <span className="ml-1.5 text-[10px] font-semibold text-[var(--text-on-dark-45)] bg-[var(--bg-overlay-10)] px-1.5 py-0.5 rounded">
+//           {trade.exchange}
+//         </span>
+//       </td>
+//       <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//         {trade.quantity}
+//       </td>
+//       <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//         {trade.entry_price.toFixed(2)}
+//       </td>
+//       <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//         {trade.exit_price ? trade.exit_price.toFixed(2) : "—"}
+//       </td>
+//       <td
+//         className={`px-3 py-3 text-[13px] font-medium border-b border-[var(--border-overlay-12)] whitespace-nowrap ${
+//           trade.pnl >= 0 ? "text-green-500" : "text-red-500"
+//         }`}
+//       >
+//         {trade.status === "CLOSED" ? `${trade.pnl >= 0 ? "+" : ""}${trade.pnl.toFixed(2)}` : "—"}
+//       </td>
+//       <td className="px-3 py-3 text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//         <StatusBadge status={trade.status === "OPEN" ? "OPEN" : "COMPLETE"} />
+//       </td>
+//     </tr>
+//   );
+
+//   const tableHeaders = ["Time", "Type", "Instrument", "Qty.", "Entry Price", "Exit Price", "P&L", "Status"];
+
+//   const renderTable = (rows: any[]) => (
+//     <div className="overflow-x-auto">
+//       <table className="w-full border-collapse">
+//         <thead>
+//           <tr>
+//             {tableHeaders.map((h) => (
+//               <th key={h} className="px-3 py-2 text-[11px] font-semibold text-[var(--text-on-dark-45)] text-left border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//                 {h}
+//               </th>
+//             ))}
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {rows.length === 0 ? (
+//             <tr>
+//               <td colSpan={tableHeaders.length} className="px-3 py-8 text-center text-[var(--text-on-dark-45)] text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+//                 No data found
+//               </td>
+//             </tr>
+//           ) : (
+//             rows.map(renderTradeRow)
+//           )}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+
 //   const renderTabContent = () => {
 //     switch (activeTab) {
 //       case "Orders":
 //         return (
 //           <>
+//             {/* ═══ Executed Section (CLOSED trades) ═══ */}
 //             <SectionHeader
-//               title="Orders"
-//               count={filteredTrades.length}
-//               collapsed={ordersCollapsed}
-//               onToggle={() => setOrdersCollapsed((p) => !p)}
-//               searchVal={orderSearch}
-//               onSearch={setOrderSearch}
+//               title="Executed"
+//               count={executedTrades.length}
+//               collapsed={executedCollapsed}
+//               onToggle={() => setExecutedCollapsed((p) => !p)}
+//               searchVal={executedSearch}
+//               onSearch={setExecutedSearch}
 //               extraActions={
 //                 <button className="flex items-center gap-1.5 bg-none border-none cursor-pointer text-[var(--color-accent)] text-xs font-medium">
 //                   Contract note
@@ -182,64 +256,21 @@
 //               }
 //             />
 
-//             {!ordersCollapsed && (
-//               <div className="overflow-x-auto">
-//                 <table className="w-full border-collapse">
-//                   <thead>
-//                     <tr>
-//                       {["Time", "Type", "Instrument", "Qty.", "Entry Price", "Exit Price", "P&L", "Status"].map((h) => (
-//                         <th key={h} className="px-3 py-2 text-[11px] font-semibold text-[var(--text-on-dark-45)] text-left border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           {h}
-//                         </th>
-//                       ))}
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {filteredTrades.length === 0 ? (
-//                       <tr>
-//                         <td colSpan={8} className="px-3 py-8 text-center text-[var(--text-on-dark-45)] text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           No orders found
-//                         </td>
-//                       </tr>
-//                     ) : filteredTrades.map((trade) => (
-//                       <tr key={trade.id} className="transition-colors duration-100 hover:bg-[var(--bg-overlay-08)]">
-//                         <td className="px-3 py-3 text-[var(--text-on-dark-55)] text-xs border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           {new Date(trade.opened_at).toLocaleTimeString("en-IN")}
-//                         </td>
-//                         <td className="px-3 py-3 text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           <TypeBadge type={trade.transaction_type} />
-//                         </td>
-//                         <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           <span>{trade.name}</span>
-//                           <span className="ml-1.5 text-[10px] font-semibold text-[var(--text-on-dark-45)] bg-[var(--bg-overlay-10)] px-1.5 py-0.5 rounded">
-//                             {trade.exchange}
-//                           </span>
-//                         </td>
-//                         <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           {trade.quantity}
-//                         </td>
-//                         <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           {trade.entry_price.toFixed(2)}
-//                         </td>
-//                         <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           {trade.exit_price ? trade.exit_price.toFixed(2) : "—"}
-//                         </td>
-//                         <td
-//                           className={`px-3 py-3 text-[13px] font-medium border-b border-[var(--border-overlay-12)] whitespace-nowrap ${
-//                             trade.pnl >= 0 ? "text-green-500" : "text-red-500"
-//                           }`}
-//                         >
-//                           {trade.status === "CLOSED" ? `${trade.pnl >= 0 ? "+" : ""}${trade.pnl.toFixed(2)}` : "—"}
-//                         </td>
-//                         <td className="px-3 py-3 text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-//                           <StatusBadge status={trade.status === "OPEN" ? "OPEN" : "COMPLETE"} />
-//                         </td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             )}
+//             {!executedCollapsed && renderTable(executedTrades)}
+
+//             {/* ═══ Trades Section (OPEN trades) ═══ */}
+//             <div className="mt-6">
+//               <SectionHeader
+//                 title="Trades"
+//                 count={openTrades.length}
+//                 collapsed={tradesCollapsed}
+//                 onToggle={() => setTradesCollapsed((p) => !p)}
+//                 searchVal={tradesSearch}
+//                 onSearch={setTradesSearch}
+//               />
+
+//               {!tradesCollapsed && renderTable(openTrades)}
+//             </div>
 //           </>
 //         );
 //       case "GTT":
@@ -284,8 +315,11 @@ import { useState, useEffect } from "react";
 import { HiOutlineDownload, HiSearch } from "react-icons/hi";
 import { RiArrowUpSLine, RiArrowDownSLine } from "react-icons/ri";
 import { useDemoTradeStore } from "../store/useDemoTradeStore";
+import type { DemoOrder } from "../store/useDemoTradeStore";
 
 const TABS = ["Orders", "GTT", "Baskets", "SIP", "Alerts"];
+
+// ─── Coming Soon placeholders ──────────────────────────────────────────────────
 
 function GTTComingSoon() {
   return (
@@ -347,10 +381,13 @@ function AlertsComingSoon() {
   );
 }
 
-function StatusBadge({ status }: { status: "COMPLETE" | "OPEN" }) {
-  const map = {
+// ─── Badges ────────────────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: DemoOrder["status"] }) {
+  const map: Record<DemoOrder["status"], { bg: string; color: string }> = {
     COMPLETE: { bg: "rgba(34,197,94,0.12)", color: "#22c55e" },
-    OPEN: { bg: "rgba(234,179,8,0.12)", color: "#eab308" },
+    REJECTED: { bg: "rgba(239,68,68,0.12)", color: "#ef4444" },
+    CANCELLED: { bg: "rgba(156,163,175,0.12)", color: "#9ca3af" },
   };
   const s = map[status];
   return (
@@ -379,6 +416,16 @@ function TypeBadge({ type }: { type: "BUY" | "SELL" }) {
   );
 }
 
+function ProductBadge({ product }: { product: "MIS" | "NRML" }) {
+  return (
+    <span className="ml-1.5 text-[10px] font-semibold text-[var(--text-on-dark-45)] bg-[var(--bg-overlay-10)] px-1.5 py-0.5 rounded">
+      {product}
+    </span>
+  );
+}
+
+// ─── Search + Section header ───────────────────────────────────────────────────
+
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--border-overlay-15)] bg-[var(--bg-overlay-08)]">
@@ -395,19 +442,21 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
 }
 
 function SectionHeader({
-  title, count, collapsed, onToggle, searchVal, onSearch, extraActions
+  title, count, collapsed, onToggle, searchVal, onSearch, extraActions,
 }: {
   title: string; count: number; collapsed: boolean; onToggle: () => void;
   searchVal: string; onSearch: (v: string) => void; extraActions?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between py-3.5 pb-2.5">
-      <button onClick={onToggle} className="flex items-center gap-2 bg-none border-none cursor-pointer text-[var(--text-on-dark)]">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 bg-none border-none cursor-pointer text-[var(--text-on-dark)]"
+      >
         <span className="text-base font-semibold">{title} ({count})</span>
         {collapsed
           ? <RiArrowDownSLine className="text-lg text-[var(--text-on-dark-55)]" />
-          : <RiArrowUpSLine className="text-lg text-[var(--text-on-dark-55)]" />
-        }
+          : <RiArrowUpSLine className="text-lg text-[var(--text-on-dark-55)]" />}
       </button>
       <div className="flex items-center gap-3">
         <SearchBox value={searchVal} onChange={onSearch} />
@@ -420,84 +469,78 @@ function SectionHeader({
   );
 }
 
-export default function Orders() {
-  const [activeTab, setActiveTab] = useState("Orders");
-  const [executedCollapsed, setExecutedCollapsed] = useState(false);
-  const [tradesCollapsed, setTradesCollapsed] = useState(false);
-  const [executedSearch, setExecutedSearch] = useState("");
-  const [tradesSearch, setTradesSearch] = useState("");
+// ─── Table ─────────────────────────────────────────────────────────────────────
 
-  const { trades, loading, fetchTrades } = useDemoTradeStore();
+// DemoOrder fields: id, symbol, name, exchange, token,
+// transaction_type, quantity, product, order_type, validity,
+// price, trigger_price, executed_price, status, created_at
 
-  useEffect(() => {
-    fetchTrades();
-    const interval = setInterval(() => fetchTrades(), 5000);
-    return () => clearInterval(interval);
-  }, []);
+const TABLE_HEADERS = ["Time", "Type", "Instrument", "Qty.", "Product", "Order Type", "Exec. Price", "Status"];
 
-  // ── CLOSED status → "Executed" section ───────────────────────────────────
-  const executedTrades = trades
-    .filter((t) => t.status === "CLOSED")
-    .filter((t) => t.symbol.toLowerCase().includes(executedSearch.toLowerCase()));
-
-  // ── OPEN status → "Trades" section ────────────────────────────────────────
-  const openTrades = trades
-    .filter((t) => t.status === "OPEN")
-    .filter((t) => t.symbol.toLowerCase().includes(tradesSearch.toLowerCase()));
-
-  if (loading && trades.length === 0) {
-    return (
-      <div className="bg-[var(--color-primary)] min-h-full rounded-2xl px-6 pb-6 text-[var(--text-on-dark)] flex items-center justify-center h-[400px]">
-        <div className="text-[var(--text-on-dark-55)]">Loading...</div>
-      </div>
-    );
-  }
-
-  const renderTradeRow = (trade: any) => (
-    <tr key={trade.id} className="transition-colors duration-100 hover:bg-[var(--bg-overlay-08)]">
+function OrderRow({ order }: { order: DemoOrder }) {
+  return (
+    <tr className="transition-colors duration-100 hover:bg-[var(--bg-overlay-08)]">
+      {/* Time */}
       <td className="px-3 py-3 text-[var(--text-on-dark-55)] text-xs border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-        {new Date(trade.opened_at).toLocaleTimeString("en-IN")}
+        {new Date(order.createdAt).toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })}
       </td>
+
+      {/* BUY / SELL */}
       <td className="px-3 py-3 text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-        <TypeBadge type={trade.transaction_type} />
+        <TypeBadge type={order.transaction_type} />
       </td>
+
+      {/* Instrument name + exchange */}
       <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-        <span>{trade.name}</span>
+        <span>{order.name}</span>
         <span className="ml-1.5 text-[10px] font-semibold text-[var(--text-on-dark-45)] bg-[var(--bg-overlay-10)] px-1.5 py-0.5 rounded">
-          {trade.exchange}
+          {order.exchange}
         </span>
       </td>
+
+      {/* Quantity */}
       <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-        {trade.quantity}
+        {order.quantity}
       </td>
-      <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-        {trade.entry_price.toFixed(2)}
-      </td>
-      <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-        {trade.exit_price ? trade.exit_price.toFixed(2) : "—"}
-      </td>
-      <td
-        className={`px-3 py-3 text-[13px] font-medium border-b border-[var(--border-overlay-12)] whitespace-nowrap ${
-          trade.pnl >= 0 ? "text-green-500" : "text-red-500"
-        }`}
-      >
-        {trade.status === "CLOSED" ? `${trade.pnl >= 0 ? "+" : ""}${trade.pnl.toFixed(2)}` : "—"}
-      </td>
+
+      {/* Product — MIS / NRML */}
       <td className="px-3 py-3 text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-        <StatusBadge status={trade.status === "OPEN" ? "OPEN" : "COMPLETE"} />
+        <ProductBadge product={order.product} />
+      </td>
+
+      {/* Order type — MARKET / LIMIT / SL / SL-M */}
+      <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-55)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+        {order.order_type}
+      </td>
+
+      {/* Executed price — actual LTP at execution */}
+      <td className="px-3 py-3 text-[13px] text-[var(--text-on-dark-80)] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+        ₹{order.executed_price.toFixed(2)}
+      </td>
+
+      {/* Status */}
+      <td className="px-3 py-3 text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+        <StatusBadge status={order.status} />
       </td>
     </tr>
   );
+}
 
-  const tableHeaders = ["Time", "Type", "Instrument", "Qty.", "Entry Price", "Exit Price", "P&L", "Status"];
-
-  const renderTable = (rows: any[]) => (
+function OrdersTable({ rows }: { rows: DemoOrder[] }) {
+  return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse">
         <thead>
           <tr>
-            {tableHeaders.map((h) => (
-              <th key={h} className="px-3 py-2 text-[11px] font-semibold text-[var(--text-on-dark-45)] text-left border-b border-[var(--border-overlay-12)] whitespace-nowrap">
+            {TABLE_HEADERS.map((h) => (
+              <th
+                key={h}
+                className="px-3 py-2 text-[11px] font-semibold text-[var(--text-on-dark-45)] text-left border-b border-[var(--border-overlay-12)] whitespace-nowrap"
+              >
                 {h}
               </th>
             ))}
@@ -506,27 +549,66 @@ export default function Orders() {
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={tableHeaders.length} className="px-3 py-8 text-center text-[var(--text-on-dark-45)] text-[13px] border-b border-[var(--border-overlay-12)] whitespace-nowrap">
-                No data found
+              <td
+                colSpan={TABLE_HEADERS.length}
+                className="px-3 py-8 text-center text-[var(--text-on-dark-45)] text-[13px] border-b border-[var(--border-overlay-12)]"
+              >
+                No orders found
               </td>
             </tr>
           ) : (
-            rows.map(renderTradeRow)
+            rows.map((order) => <OrderRow key={order.id} order={order} />)
           )}
         </tbody>
       </table>
     </div>
   );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+
+export default function Orders() {
+  const [activeTab, setActiveTab] = useState("Orders");
+  const [executedCollapsed, setExecutedCollapsed] = useState(false);
+  const [rejectedCollapsed, setRejectedCollapsed] = useState(true);
+  const [executedSearch, setExecutedSearch] = useState("");
+  const [rejectedSearch, setRejectedSearch] = useState("");
+
+  // ── CHANGE: fetchTrades → fetchOrders, trades → orders ───────────────────
+  const { orders, loading, fetchOrders } = useDemoTradeStore();
+
+  useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(() => fetchOrders(), 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ── CHANGE: status filter — DemoOrder uses "COMPLETE" not "CLOSED" ────────
+  const executedOrders = orders
+    .filter((o) => o.status === "COMPLETE")
+    .filter((o) => o.name.toLowerCase().includes(executedSearch.toLowerCase()));
+
+  const rejectedOrders = orders
+    .filter((o) => o.status === "REJECTED" || o.status === "CANCELLED")
+    .filter((o) => o.name.toLowerCase().includes(rejectedSearch.toLowerCase()));
+
+  if (loading && orders.length === 0) {
+    return (
+      <div className="bg-[var(--color-primary)] min-h-full rounded-2xl px-6 pb-6 text-[var(--text-on-dark)] flex items-center justify-center h-[400px]">
+        <div className="text-[var(--text-on-dark-55)]">Loading...</div>
+      </div>
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "Orders":
         return (
           <>
-            {/* ═══ Executed Section (CLOSED trades) ═══ */}
+            {/* ── Executed orders (COMPLETE) ── */}
             <SectionHeader
               title="Executed"
-              count={executedTrades.length}
+              count={executedOrders.length}
               collapsed={executedCollapsed}
               onToggle={() => setExecutedCollapsed((p) => !p)}
               searchVal={executedSearch}
@@ -537,39 +619,35 @@ export default function Orders() {
                 </button>
               }
             />
+            {!executedCollapsed && <OrdersTable rows={executedOrders} />}
 
-            {!executedCollapsed && renderTable(executedTrades)}
-
-            {/* ═══ Trades Section (OPEN trades) ═══ */}
-            <div className="mt-6">
-              <SectionHeader
-                title="Trades"
-                count={openTrades.length}
-                collapsed={tradesCollapsed}
-                onToggle={() => setTradesCollapsed((p) => !p)}
-                searchVal={tradesSearch}
-                onSearch={setTradesSearch}
-              />
-
-              {!tradesCollapsed && renderTable(openTrades)}
-            </div>
+            {/* ── Rejected / Cancelled orders ── */}
+            {rejectedOrders.length > 0 && (
+              <div className="mt-6">
+                <SectionHeader
+                  title="Rejected"
+                  count={rejectedOrders.length}
+                  collapsed={rejectedCollapsed}
+                  onToggle={() => setRejectedCollapsed((p) => !p)}
+                  searchVal={rejectedSearch}
+                  onSearch={setRejectedSearch}
+                />
+                {!rejectedCollapsed && <OrdersTable rows={rejectedOrders} />}
+              </div>
+            )}
           </>
         );
-      case "GTT":
-        return <GTTComingSoon />;
-      case "Baskets":
-        return <BasketsComingSoon />;
-      case "SIP":
-        return <SIPComingSoon />;
-      case "Alerts":
-        return <AlertsComingSoon />;
-      default:
-        return null;
+      case "GTT": return <GTTComingSoon />;
+      case "Baskets": return <BasketsComingSoon />;
+      case "SIP": return <SIPComingSoon />;
+      case "Alerts": return <AlertsComingSoon />;
+      default: return null;
     }
   };
 
   return (
     <div className="bg-[var(--color-primary)] min-h-full px-6 pb-6 text-[var(--text-on-dark)]">
+      {/* ── Tab bar ── */}
       <div className="flex items-center gap-0 border-b border-[var(--border-overlay-12)] mb-1">
         {TABS.map((tab) => (
           <button

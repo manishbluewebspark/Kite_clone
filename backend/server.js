@@ -140,7 +140,8 @@ import { startAngelMarketSocket, subscribeInstrument } from "./services/angelMar
 import { getExchangeType } from "./utils/exchangeMap.js";
 // import { loadKiteInstruments } from "./services/kiteService.js";
 import { loadInstruments } from "./services/instrumentService.js";
-import DemoTrade from "./models/DemoTrade.js";
+import DemoTrade from "./models/DemoOrder.js";
+import DemoPosition from "./models/DemoPosition.js";
 
 import { subscribeKiteToken } from "./services/kiteTickerService.js";
 
@@ -223,7 +224,7 @@ function withTimeout(promise, ms, label) {
 // ── Re-subscribe open demo trades using angel smart api ───────────────────────────
 async function resubscribeOpenTrades() {
   try {
-    const openTrades = await DemoTrade.findAll({ where: { status: "OPEN" } });
+    const openTrades = await DemoPosition.findAll({ where: { status: "OPEN" } }); // ← DemoTrade → DemoPosition
 
     const uniqueTokens = new Map();
     openTrades.forEach((t) => uniqueTokens.set(t.token, t.exchange));
@@ -239,9 +240,7 @@ async function resubscribeOpenTrades() {
       }
     }
 
-    console.log(
-      `📡 Re-subscribed ${subscribed}/${uniqueTokens.size} open demo-trade instruments`
-    );
+    console.log(`📡 Re-subscribed ${subscribed}/${uniqueTokens.size} open demo-trade instruments`);
   } catch (err) {
     console.error("⚠️  resubscribeOpenTrades failed:", err.message);
   }

@@ -2,20 +2,64 @@ import { create } from "zustand";
 import axiosInstance from "../lib/axios";
 import { socket } from "../lib/socket";
 
-export interface DemoTrade {
+// ─── Interfaces ────────────────────────────────────────────────────────────────
+
+export interface DemoOrder {
   id: number;
+  user_id: number;
   symbol: string;
   name: string;
   exchange: string;
   token: string;
   transaction_type: "BUY" | "SELL";
   quantity: number;
-  entry_price: number;
-  exit_price: number | null;
+  product: "MIS" | "NRML";
+  order_type: "MARKET" | "LIMIT" | "SL" | "SL-M";
+  validity: "DAY" | "IOC" | "MINUTES";
+  price: number;
+  trigger_price: number;
+  executed_price: number;
+  status: "COMPLETE" | "REJECTED" | "CANCELLED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DemoPosition {
+  id: number;
+  user_id: number;
+  symbol: string;
+  name: string;
+  exchange: string;
+  token: string;
+  product: "MIS" | "NRML";
+  transaction_type: "BUY" | "SELL" | null; // null when flat (qty = 0)
+  quantity: number;       // positive = long, negative = short, 0 = flat
+  average_price: number;
+  buy_quantity: number;
+  buy_value: number;
+  sell_quantity: number;
+  sell_value: number;
+  realised_pnl: number;
+  unrealised_pnl: number;
+  last_price: number;     // updated via socket
   status: "OPEN" | "CLOSED";
-  pnl: number;
-  opened_at: string;
-  closed_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+}
+
+export interface PlaceOrderPayload {
+  symbol: string;
+  name: string;
+  exchange: string;
+  token: string;
+  transaction_type: "BUY" | "SELL";
+  quantity: number;
+  product?: "MIS" | "NRML";
+  order_type?: "MARKET" | "LIMIT" | "SL" | "SL-M";
+  validity?: "DAY" | "IOC" | "MINUTES";
+  price?: number;
+  trigger_price?: number;
 }
 
 interface LiveQuote {
@@ -25,47 +69,125 @@ interface LiveQuote {
   isUp: boolean;
 }
 
+// ─── Store Interface ───────────────────────────────────────────────────────────
+
 interface DemoTradeState {
-  trades: DemoTrade[];
+  orders: DemoOrder[];
+  positions: DemoPosition[];
   liveQuotes: Record<string, LiveQuote>;
   loading: boolean;
   error: string | null;
-  fetchTrades: (status?: "OPEN" | "CLOSED") => Promise<void>;
+
+  fetchOrders: () => Promise<void>;
+  fetchPositions: (status?: "OPEN" | "CLOSED") => Promise<void>;
+  fetchAll: () => Promise<void>;
   initLiveQuoteListener: () => void;
-  openTrade: (data: {
-    symbol: string;
-    name: string;
-    exchange: string;
-    token: string;
-    transaction_type: "BUY" | "SELL";
-    quantity: number;
-  }) => Promise<DemoTrade | null>;
-  closeTrade: (id: number) => Promise<void>;
+  placeOrder: (
+    data: PlaceOrderPayload
+  ) => Promise<{ order: DemoOrder; position: DemoPosition } | null>;
+  deleteOrder: (id: number) => Promise<void>;
 }
 
+// ─── Store ─────────────────────────────────────────────────────────────────────
+
 export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
-  trades: [],
+  orders: [],
+  positions: [],
   liveQuotes: {},
   loading: false,
   error: null,
 
-  fetchTrades: async (status) => {
+  // ── Fetch all orders (order book) ──────────────────────────────────────────
+  fetchOrders: async () => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axiosInstance.get("/demo-trades", {
-        params: status ? { status } : {},
-      });
+      const { data } = await axiosInstance.get("/demo-trades/orders");
       if (data.success) {
-        set({ trades: data.data, loading: false });
+        set({ orders: data.data, loading: false });
       }
     } catch (err: any) {
       set({ loading: false, error: err.response?.data?.message || err.message });
     }
   },
 
-  // ── Socket listener — sirf ek baar register hoga ──────────────────────────
+  // ── Fetch positions (positions tab) ───────────────────────────────────────
+  fetchPositions: async (status) => {
+    set({ loading: true, error: null });
+    try {
+      const { data } = await axiosInstance.get("/demo-trades/positions", {
+        params: status ? { status } : {},
+      });
+      if (data.success) {
+        set({ positions: data.data, loading: false });
+      }
+    } catch (err: any) {
+      set({ loading: false, error: err.response?.data?.message || err.message });
+    }
+  },
+
+  // ── Fetch both simultaneously (initial load) ──────────────────────────────
+  fetchAll: async () => {
+    set({ loading: true, error: null });
+    try {
+      const [ordersRes, positionsRes] = await Promise.all([
+        axiosInstance.get("/demo-trades/orders"),
+        axiosInstance.get("/demo-trades/positions"),
+      ]);
+      set({
+        orders: ordersRes.data.success ? ordersRes.data.data : [],
+        positions: positionsRes.data.success ? positionsRes.data.data : [],
+        loading: false,
+      });
+    } catch (err: any) {
+      set({ loading: false, error: err.response?.data?.message || err.message });
+    }
+  },
+
+  // ── Place order — backend dono tables update karta hai ────────────────────
+  placeOrder: async (tradeData) => {
+    set({ error: null });
+    try {
+      const { data } = await axiosInstance.post("/demo-trades/order", tradeData);
+      if (data.success) {
+        const { order, position } = data;
+
+        set((state) => ({
+          // New order always prepend karo
+          orders: [order, ...state.orders],
+
+          // Position: agar same id exist karta hai to update, nahi to add
+          positions: state.positions.some((p) => p.id === position.id)
+            ? state.positions.map((p) => (p.id === position.id ? position : p))
+            : [position, ...state.positions],
+        }));
+
+        return { order, position };
+      }
+      return null;
+    } catch (err: any) {
+      set({ error: err.response?.data?.message || err.message });
+      return null;
+    }
+  },
+
+  // ── Delete order from order book ──────────────────────────────────────────
+  deleteOrder: async (id) => {
+    set({ error: null });
+    try {
+      const { data } = await axiosInstance.delete(`/demo-trades/orders/${id}`);
+      if (data.success) {
+        set((state) => ({
+          orders: state.orders.filter((o) => o.id !== id),
+        }));
+      }
+    } catch (err: any) {
+      set({ error: err.response?.data?.message || err.message });
+    }
+  },
+
+  // ── Socket listener — live LTP updates ────────────────────────────────────
   initLiveQuoteListener: () => {
-    socket.off("demo:tick"); // safe re-init, duplicate listeners se bachne ke liye
+    socket.off("demo:tick"); // duplicate listeners se bachne ke liye
     socket.on("demo:tick", (payload) => {
       if (payload.success) {
         set((state) => ({
@@ -73,34 +195,5 @@ export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
         }));
       }
     });
-  },
-
-  openTrade: async (tradeData) => {
-    set({ error: null });
-    try {
-      const { data } = await axiosInstance.post("/demo-trades/open", tradeData);
-      if (data.success) {
-        set({ trades: [data.data, ...get().trades] });
-        return data.data;
-      }
-      return null;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || err.message });
-      return null;
-    }
-  },
-
-  closeTrade: async (id) => {
-    set({ error: null });
-    try {
-      const { data } = await axiosInstance.post(`/demo-trades/${id}/close`);
-      if (data.success) {
-        set({
-          trades: get().trades.map((t) => (t.id === id ? data.data : t)),
-        });
-      }
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || err.message });
-    }
   },
 }));

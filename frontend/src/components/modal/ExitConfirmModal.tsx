@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
 import toast from 'react-hot-toast';
+import type { DisplayRow } from "../../pages/Positions";
 
-interface SelectedPosition {
-  id: number;
-  instrument: string;
-  product: string;
-  netQty: number;
-  price: string;
-  type: string;
-  validity: string;
-  transaction_type: string;
-  exchange: string
-}
+
+// interface SelectedPosition {
+//   id: number;
+//   instrument: string;
+//   product: string;
+//   netQty: number;
+//   price: string;
+//   type: string;
+//   validity: string;
+//   transaction_type: string;
+//   exchange: string
+// }
 
 interface ExitConfirmModalProps {
-  positions: SelectedPosition[];
+  positions: DisplayRow[];
   onConfirm: () => void;
   onCancel: () => void;
+  loading?: boolean;
 }
 
 function formatNumber(n: number) {

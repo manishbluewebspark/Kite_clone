@@ -49,7 +49,7 @@ export default function OrderModal({
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
 
-  const { openTrade } = useDemoTradeStore();
+  const { placeOrder } = useDemoTradeStore();
 
   // ── Draggable state ──
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -144,15 +144,22 @@ export default function OrderModal({
     setError("");
     setPlacing(true);
     const transactionType = isOrange ? "SELL" : "BUY";
+    const product = intraday ? "MIS" : "NRML";
+    const order_type = orderType === "market" ? "MARKET" : "LIMIT";
 
     try {
-      const trade = await openTrade({
+      const trade = await placeOrder({
         symbol,
         name: symbol,
         exchange,
         token,
         transaction_type: transactionType,
         quantity: qty,
+        product,
+        order_type,
+        validity: "DAY",
+        price: order_type === "LIMIT" ? price : 0,
+        trigger_price: triggerPrice,
       });
 
       setPlacing(false);
