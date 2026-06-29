@@ -176,12 +176,28 @@ export default function WatchlistPanel() {
   const totalStocksInActiveTab = entries.length;
   const addedTokens = new Set(entries.map((e) => e.token));
 
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+  const handleClickOutside = (e: MouseEvent) => {
+    if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+      setIsSearching(false);
+      setSearchQuery("");
+      setQuery("");
+    }
+  };
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
+    ref={panelRef} 
       className="flex flex-col border-r shrink-0 relative overflow-hidden"
       style={{
-        width: "420px",
+        width: "425px",
         borderColor: "var(--border-overlay-12)",
         backgroundColor: "var(--color-primary)",
       }}
@@ -272,6 +288,11 @@ export default function WatchlistPanel() {
           onSell={(_row) => {}}
           onChart={(_row) => {}}
           onInfo={(_row) => {}}
+            onClose={() => {
+    setIsSearching(false);
+    setSearchQuery("");
+    setQuery("");
+  }}
         />
       ) : (
         /* ══════════════════════════════════════════════════════════════

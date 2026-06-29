@@ -3,8 +3,12 @@ import { createPortal } from "react-dom";
 import { ChevronDown, X, Layers, RotateCcw, Pencil, ChevronUp } from "lucide-react";
 import { useDemoTradeStore } from "../../store/useDemoTradeStore";
 import toast from 'react-hot-toast';
+import { showTradeToast } from "../../utils/tradeToast";
 
 type TabKey = "quick" | "regular" | "iceberg";
+
+
+
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "quick", label: "Quick" },
@@ -140,45 +144,94 @@ export default function OrderModal({
   // Derived lot count for display
   const lotCount = Math.round(qty / lotSize);
 
-  const handlePlaceOrder = async () => {
-    setError("");
-    setPlacing(true);
-    const transactionType = isOrange ? "SELL" : "BUY";
-    const product = intraday ? "MIS" : "NRML";
-    const order_type = orderType === "market" ? "MARKET" : "LIMIT";
+const handlePlaceOrder = async () => {
+  setError("");
+  setPlacing(true);
+  const transactionType = isOrange ? "SELL" : "BUY";
+  const product = intraday ? "MIS" : "NRML";
+  const order_type = orderType === "market" ? "MARKET" : "LIMIT";
 
-    try {
-      const trade = await placeOrder({
-        symbol,
-        name: symbol,
+  try {
+    const randomPart = String(Math.floor(Math.random() * 90_000) + 10_000); // 5 digits
+const customOrderId = `${fixedPart.current}${randomPart}`; 
+    const trade = await placeOrder({
+      symbol,
+      name: symbol,
+      exchange,
+      token,
+      transaction_type: transactionType,
+      quantity: qty,
+      product,
+      order_type,
+      validity: "DAY",
+      price: order_type === "LIMIT" ? price : 0,
+      trigger_price: triggerPrice,
+    });
+
+    setPlacing(false);
+
+    if (trade) {
+      showTradeToast(
+        {
+          instrument: symbol,
+          exchange,
+          token,
+          transaction_type: transactionType,
+          netQty: qty,
+          ltp: orderType === "market" ? bfoPrice : price,
+          // id: trade?.id ?? token,
+          id: customOrderId,
+        } as any,
+        "success",
+        transactionType 
+      );
+      onOrderPlaced?.();
+      onClose?.();
+    } else {
+      showTradeToast(
+        {
+          instrument: symbol,
+          exchange,
+          token,
+          transaction_type: transactionType,
+          netQty: qty,
+          ltp: orderType === "market" ? bfoPrice : price,
+          // id: token,
+          id: customOrderId,
+        } as any,
+        "error",
+        transactionType 
+      );
+      setError("Failed to place order. Try again.");
+    }
+  } catch (err: any) {
+    setPlacing(false);
+    const message = err?.message || "Something went wrong while placing order";
+    showTradeToast(
+      {
+        instrument: symbol,
         exchange,
         token,
         transaction_type: transactionType,
-        quantity: qty,
-        product,
-        order_type,
-        validity: "DAY",
-        price: order_type === "LIMIT" ? price : 0,
-        trigger_price: triggerPrice,
-      });
+        netQty: qty,
+        ltp: orderType === "market" ? bfoPrice : price,
+        id: token,
+      } as any,
+      "error",
+      transactionType 
+    );
+    setError(message);
+  }
+};
 
-      setPlacing(false);
 
-      if (trade) {
-        toast.success(`Order placed successfully! ${transactionType} ${qty} ${symbol}`);
-        onOrderPlaced?.();
-        onClose?.();
-      } else {
-        toast.error("Failed to place order. Please try again.");
-        setError("Failed to place order. Try again.");
-      }
-    } catch (err: any) {
-      setPlacing(false);
-      const message = err?.message || String(err) || "Something went wrong while placing order";
-      toast.error(message);
-      setError(message || "Failed to place order. Try again.");
-    }
-  };
+const fixedPart = useRef<string>("");
+
+useEffect(() => {
+  fixedPart.current = String(Math.floor(Math.random() * 9_000_000_000) + 1_000_000_000);
+}, [Symbol]);
+
+
 
   const isQuick = activeTab === "quick";
   const modalWidth = isQuick ? "280px" : "540px";

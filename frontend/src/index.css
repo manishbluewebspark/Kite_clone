@@ -581,14 +581,11 @@ body {
 
 
 
-.my-toast,
+/* .my-toast,
 .my-toast-success,
 .my-toast-error,
 .go2474165213,
 .go3952471468 {
-  border-radius: 0px !important;
-}
+  border-radius: 2px !important;
+} */
 
-[class*="go"] {
-  border-radius: 0px !important;
-}

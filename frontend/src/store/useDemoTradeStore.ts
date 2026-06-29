@@ -84,7 +84,10 @@ interface DemoTradeState {
     initLiveQuoteListener: () => void;
     placeOrder: (
         data: PlaceOrderPayload
-    ) => Promise<{ order: DemoOrder; position: DemoPosition } | null>;
+    ) => Promise<{
+        order: DemoOrder;
+        position: DemoPosition;
+    } | null>;
     deleteOrder: (id: number) => Promise<void>;
 }
 

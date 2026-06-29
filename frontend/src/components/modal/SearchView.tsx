@@ -28,6 +28,7 @@ interface SearchViewProps {
   onPagePrev: () => void;
   page: number;
   totalPages: number;
+  onClose?: () => void; 
 }
 
 export default function SearchView({
@@ -41,6 +42,7 @@ export default function SearchView({
   onSell,
   onChart,
   onInfo,
+  onClose,
 }: SearchViewProps) {
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export default function SearchView({
   const handleRootMouseLeave = () => {
     setHoveredToken(null);
     setTooltip(null);
+    onClose?.();
   };
 
   return (

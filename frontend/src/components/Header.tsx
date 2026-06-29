@@ -10,7 +10,6 @@ import UserDropdown from "./UserDropdown";
 import { socket } from "../lib/socket";
 import { BsCart2 } from "react-icons/bs";
 
-// ── Polling interval: 15 seconds ─────────────────────────────────────────────
 const MARKET_POLL_INTERVAL = 15_000;
 
 export default function Header() {
@@ -21,7 +20,6 @@ export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
 
-  // ── Live market polling ───────────────────────────────────────────────────
   useEffect(() => {
     initSocketListeners();
     return () => {
@@ -31,12 +29,10 @@ export default function Header() {
     };
   }, []);
 
-  // DYNAMIC nav links
   const navLinks = sidebarItems
     .flatMap((section) => section.children ?? [])
     .filter((item) => item.roles?.includes(role));
 
-  // Only show NIFTY 50 and SENSEX in header ticker
   const headerTicker = indices.filter((idx) =>
     ["NIFTY 50", "SENSEX"].includes(idx.name)
   );
@@ -53,58 +49,67 @@ export default function Header() {
         {/* LEFT SIDE: Market Ticker + Logo + Toggle UI */}
         <div className="flex items-center gap-3 shrink-0 px-2">
 
-          {/* ── Live Market Ticker ─────────────────────────────────────────── */}
-          {headerTicker.length > 0
-            ? headerTicker.map((item) => {
-              const color = item.isUp ? "#22c55e" : "#ef4444";
-              return (
-                <div key={item.name} className="flex items-center gap-2">
-                  <span
-                    className="text-[11px] font-semibold"
-                    style={{ color: "var(--text-on-dark-80)" }}
-                  >
-                    {item.name}
-                  </span>
-                  <span className="text-[11px] font-bold" style={{ color }}>
-                    {item.last.toLocaleString("en-IN", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                  <span
-                    className="text-[11px] font-medium text-gray-400!"
-                    style={{ color }}
-                  >
-                    {item.isUp ? "+" : ""}
-                    {item.change.toFixed(2)} ({item.isUp ? "+" : ""}
-                    {item.changePct.toFixed(2)}%)
-                  </span>
-                  {/* Mock indicator — dev mein dikhega */}
-                  {/* {isMock && (
-                      <span className="text-[9px] text-yellow-400 opacity-60">
-                        (mock)
-                      </span>
-                    )} */}
-                </div>
-              );
-            })
-            : /* Skeleton jab data load ho raha ho */
-            ["NIFTY 50", "SENSEX"].map((name) => (
+          {/* INVISIBLE placeholder — layout space hold karta hai */}
+          <div className="invisible flex items-center gap-3">
+            {["NIFTY 50", "SENSEX"].map((name) => (
               <div key={name} className="flex items-center gap-2">
-                <span
-                  className="text-[11px] font-semibold"
-                  style={{ color: "var(--text-on-dark-80)" }}
-                >
-                  {name}
-                </span>
-                <span
-                  className="text-[11px] animate-pulse"
-                  style={{ color: "var(--text-on-dark-40)" }}
-                >
-                  ——
-                </span>
+                <span className="text-[11px] font-semibold">{name}</span>
+                <span className="text-[11px] font-bold">00,000.00</span>
+                <span className="text-[11px]">+000.00 (+0.00%)</span>
               </div>
             ))}
+          </div>
+
+          {/* ABSOLUTE — actual visible ticker */}
+          <div
+            className="absolute flex items-center gap-3"
+            style={{ top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
+          >
+            {headerTicker.length > 0
+              ? headerTicker.map((item) => {
+                  const color = item.isUp ? "#22c55e" : "#ef4444";
+                  return (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <span
+                        className="text-[11px] font-semibold"
+                        style={{ color: "var(--text-on-dark-80)" }}
+                      >
+                        {item.name}
+                      </span>
+                      <span className="text-[11px] font-bold" style={{ color }}>
+                        {item.last.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                      <span
+                        className="text-[11px] font-medium text-gray-400!"
+                        style={{ color }}
+                      >
+                        {item.isUp ? "+" : ""}
+                        {item.change.toFixed(2)} ({item.isUp ? "+" : ""}
+                        {item.changePct.toFixed(2)}%)
+                      </span>
+                    </div>
+                  );
+                })
+              : ["NIFTY 50", "SENSEX"].map((name) => (
+                  <div key={name} className="flex items-center gap-2">
+                    <span
+                      className="text-[11px] font-semibold"
+                      style={{ color: "var(--text-on-dark-80)" }}
+                    >
+                      {name}
+                    </span>
+                    <span
+                      className="text-[11px] animate-pulse"
+                      style={{ color: "var(--text-on-dark-40)" }}
+                    >
+                      ——
+                    </span>
+                  </div>
+                ))}
+          </div>
 
           {/* Separator */}
           <div
@@ -127,7 +132,6 @@ export default function Header() {
             className="flex items-center rounded-sm border overflow-hidden"
             style={{ borderColor: "#e5e5e5", height: "28px" }}
           >
-            {/* Left Section */}
             <div className="flex items-center gap-4 px-1">
               <span className="text-[11px] font-medium text-gray-700">
                 Default
@@ -152,11 +156,7 @@ export default function Header() {
                 />
               </svg>
             </div>
-
-            {/* Divider */}
             <div className="w-px h-6 bg-gray-200" />
-
-            {/* Right Section */}
             <button className="w-8 flex items-center justify-center bg-gray-100">
               <svg
                 width="15"
@@ -187,16 +187,16 @@ export default function Header() {
 
         {/* RIGHT SIDE: NavLinks + Notification + User Dropdown */}
         <div className="flex items-center gap-4 shrink-0">
-          {/* Nav Links */}
           <div className="flex items-center gap-1">
             {navLinks.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `whitespace-nowrap px-3 py-1.5 rounded-lg text-[12px] transition-all duration-150 no-underline  ${isActive
-                    ? "text-[var(--color-accent)]"
-                    : "text-gray-500 hover:text-[#FF5A1F]"
+                  `whitespace-nowrap px-3 py-1.5 rounded-lg text-[12px] transition-all duration-150 no-underline  ${
+                    isActive
+                      ? "text-[var(--color-accent)]"
+                      : "text-gray-500 hover:text-[#FF5A1F]"
                   }`
                 }
               >
@@ -205,37 +205,26 @@ export default function Header() {
             ))}
           </div>
 
-          {/* Separator */}
           <div
             className="w-px h-6"
             style={{ backgroundColor: "var(--border-overlay-20)" }}
           />
 
           <div className="flex items-center relative z-[9999]">
-            {/* Cart */}
-            <button
-              className="relative rounded-lg p-2 transition-colors hover:text-[#FF5A1F]"
-            >
-              <BsCart2
-                className="text-sm"
-              />
+            <button className="relative rounded-lg p-2 transition-colors hover:text-[#FF5A1F]">
+              <BsCart2 className="text-sm" />
             </button>
 
-            {/* Notification */}
             <div className="relative">
               <button
                 onClick={() => setShowNotification(!showNotification)}
                 className="relative rounded-lg p-2 transition-colors hover:text-[#FF5A1F]"
               >
-                <RiNotification3Line
-                  className="text-sm"
-                />
+                <RiNotification3Line className="text-sm" />
               </button>
-
               {showNotification && <NotificationModal />}
             </div>
 
-            {/* User Dropdown */}
             <UserDropdown
               isOpen={dropdownOpen}
               onToggle={() => setDropdownOpen(!dropdownOpen)}

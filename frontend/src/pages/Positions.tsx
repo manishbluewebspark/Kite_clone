@@ -686,6 +686,8 @@
 //   );
 // }
 
+
+
 import { useState, useEffect } from "react";
 import { HiOutlineDownload, HiSearch } from "react-icons/hi";
 import { RiArrowUpSLine, RiArrowDownSLine, RiSoundModuleFill } from "react-icons/ri";
@@ -1077,7 +1079,7 @@ function PositionsTable({
                 {showCheckbox && selected && selected.size > 0 && onBulkExit && (
                   <button
                     onClick={onBulkExit}
-                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-medium rounded transition-colors whitespace-nowrap shadow"
+                    className="absolute -left-6 top-1/2 -translate-y-1/2 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-medium rounded transition-colors whitespace-nowrap shadow"
                   >
                     Exit {selected.size} Position{selected.size > 1 ? "s" : ""}
                   </button>
@@ -1375,7 +1377,7 @@ export default function Positions() {
                     <div className="flex justify-end pr-1">
                       {sellPct > 0 && (
                         <div
-                          className="h-3 bg-orange-400 rounded-l-sm"
+                          className="h-2 bg-orange-400"
                           style={{ width: `${sellPct * 0.9}%` }}
                         />
                       )}
@@ -1402,7 +1404,7 @@ export default function Positions() {
                     <div className="flex justify-start pl-1">
                       {buyPct > 0 && (
                         <div
-                          className="h-3 bg-blue-500 rounded-r-sm"
+                          className="h-2 bg-blue-500"
                           style={{ width: `${buyPct * 0.9}%` }}
                         />
                       )}

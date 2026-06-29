@@ -82,7 +82,7 @@ export default function AppRoutes() {
 
   return (
     <BrowserRouter>
-<Toaster
+{/* <Toaster
   position="bottom-right"
   toastOptions={{
     duration: 3000,
@@ -100,7 +100,7 @@ export default function AppRoutes() {
       style: {
         background: "#ffffff",
         color: "#000000",
-        borderLeft: "4px solid #4CAF50",
+        borderLeft: "15px solid #4CAF50",
         padding: "16px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
       },
@@ -111,7 +111,7 @@ export default function AppRoutes() {
       style: {
         background: "#ffffff",
         color: "#000000",
-        borderLeft: "4px solid #f44336",
+        borderLeft: "15px solid #f44336",
         padding: "16px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
       },
@@ -126,6 +126,22 @@ export default function AppRoutes() {
     }
 
     return <ToastBar toast={t} />;
+  }}
+</Toaster> */}
+
+
+<Toaster position="bottom-right">
+  {(t) => {
+    if (t.visible && !playedToasts.has(t.id)) {
+      toastAudio.currentTime = 0;
+      toastAudio.play().catch(() => {});
+      playedToasts.add(t.id);
+    }
+    return t.type === "custom" ? (
+      <>{typeof t.message === "function" ? t.message(t) : t.message}</>
+    ) : (
+      <ToastBar toast={t} />
+    );
   }}
 </Toaster>
 
