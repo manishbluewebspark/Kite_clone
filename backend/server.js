@@ -194,6 +194,28 @@ app.set("io", io);
 
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
+
+  // ✅ Client naye tokens subscribe karna chahta hai
+  socket.on("demo:subscribe", ({ tokens }) => {
+    if (!Array.isArray(tokens)) return;
+
+    tokens.forEach((token) => {
+      socket.join(`demo:${token}`);   // is socket ko is room mein daalo
+    });
+
+    console.log(`📡 Client ${socket.id} subscribed to tokens:`, tokens);
+
+    // Angel WebSocket pe bhi subscribe karo agar already nahi hai
+    tokens.forEach((token) => {
+      try {
+        // exchange dhundhna padega — positions se ya client se bhijwao
+        subscribeInstrument(token, 1); // 1 = NSE default, ya client se exchange bhijwao
+      } catch (err) {
+        console.error(`Angel subscribe failed for ${token}:`, err.message);
+      }
+    });
+  });
+
   socket.on("disconnect", () =>
     console.log("🔌 Client disconnected:", socket.id)
   );

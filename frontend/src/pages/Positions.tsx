@@ -705,7 +705,7 @@ function formatNumber(n: number) {
 
 /** Returns true only if the position was created today */
 function isTodayPosition(p: DemoPosition): boolean {
-  const dateStr = p.createdAt;
+  const dateStr = p.created_at;
   if (!dateStr) return true;
   const d = new Date(dateStr);
   const today = new Date();
