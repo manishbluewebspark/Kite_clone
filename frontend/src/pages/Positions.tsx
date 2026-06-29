@@ -987,7 +987,7 @@ function PositionsTable({
                   {/* Qty — show direction with color */}
                   <td
                     className={`px-3 py-3 text-[13px] border-b border-gray-100 whitespace-nowrap text-right font-medium
-                      ${isClosed
+    ${isClosed
                         ? "text-gray-400"
                         : pos.netQty > 0
                           ? "text-blue-600"
@@ -996,12 +996,12 @@ function PositionsTable({
                             : "text-gray-400"
                       }`}
                   >
-                    {pos.netQty === 0 ? "0" : pos.netQty > 0 ? `+${pos.netQty}` : pos.netQty}
+                    {Math.abs(pos.netQty)}
                   </td>
 
                   {/* Avg */}
                   <td className="px-3 py-3 text-[13px] text-gray-500 border-b border-gray-100 whitespace-nowrap text-right">
-                    {pos.avg > 0 ? pos.avg.toFixed(2) : "—"}
+                    {pos.avg > 0 ? pos.avg.toFixed(2) : "0.00"}
                   </td>
 
                   {/* LTP */}
@@ -1027,12 +1027,12 @@ function PositionsTable({
                         {formatNumber(pos.totalPnl)}
                       </span>
                       {/* Realised P&L — sirf tab dikhao jab kuch realised bhi ho aur position abhi open ho */}
-                      {!isClosed && pos.realisedPnl !== 0 && (
+                      {/* {!isClosed && pos.realisedPnl !== 0 && (
                         <span className="text-[10px] text-gray-400 font-normal">
                           R: {pos.realisedPnl >= 0 ? "+" : ""}
                           {formatNumber(pos.realisedPnl)}
                         </span>
-                      )}
+                      )} */}
                     </div>
                   </td>
 
@@ -1156,10 +1156,12 @@ export default function Positions() {
     const realisedPnl = p.realised_pnl ?? 0;
     const totalPnl = isFlat ? realisedPnl : realisedPnl + unrealisedPnl;
 
-    const chg =
-      p.average_price > 0
+    const chg = isFlat
+      ? 0
+      : liveQuotes[p.token]?.changePct       // socket se live % change
+      ?? (p.average_price > 0
         ? ((liveLtp - p.average_price) / p.average_price) * 100
-        : 0;
+        : 0);
 
     return {
       id: p.id,
@@ -1203,8 +1205,8 @@ export default function Positions() {
 
   // ── P&L totals ────────────────────────────────────────────────────────────
 
-  // Positions total = only open rows (live P&L)
-  const positionsTotalPnl = filteredOpenRows.reduce((sum, r) => sum + r.totalPnl, 0);
+  // Positions total = sum of ALL rows (open + closed) for today
+  const positionsTotalPnl = allPositionRows.reduce((sum, r) => sum + r.totalPnl, 0);
   // History total = sum of final realised P&L of closed positions
   const historyTotalPnl = filteredHistory.reduce((sum, r) => sum + r.realisedPnl, 0);
 
@@ -1387,13 +1389,13 @@ export default function Positions() {
                       <span className="text-[10px] text-gray-400 ml-1">
                         ({pos.product})
                       </span>
-                      <div
+                      {/* <div
                         className={`text-[11px] font-medium mt-0.5 ${pos.realisedPnl >= 0 ? "text-green-600" : "text-red-500"
                           }`}
                       >
                         {pos.realisedPnl >= 0 ? "+" : ""}₹
                         {formatNumber(pos.realisedPnl)}
-                      </div>
+                      </div> */}
                     </div>
 
                     {/* Right — Blue (Buy) bar */}

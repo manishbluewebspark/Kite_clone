@@ -41,8 +41,10 @@ export default function StockRow({
 }: StockRowProps) {
   const isUp = quote ? quote.isUp : true;
   const ltp = quote?.ltp ?? 0;
+  // const change = quote?.change ?? 0;
+  // const pct = quote?.pct ?? 0;
+  const pct = quote?.changePct ?? quote?.pct ?? 0;
   const change = quote?.change ?? 0;
-  const pct = quote?.pct ?? 0;
   const open = quote?.open ?? 0;
   const low = quote?.low ?? 0;
   const high = quote?.high ?? 0;

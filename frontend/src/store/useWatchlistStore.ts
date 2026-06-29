@@ -134,7 +134,7 @@ export const startWatchlistPolling = () => {
   if (quotesInterval) return;
   quotesInterval = setInterval(() => {
     useWatchlistStore.getState().fetchQuotes();
-  }, 5_000);
+  }, 1_000);
 };
 
 export const stopWatchlistPolling = () => {
