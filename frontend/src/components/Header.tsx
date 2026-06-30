@@ -39,13 +39,13 @@ export default function Header() {
 
   return (
     <header
-      className="shrink-0 relative z-50 border-b"
+      className="shrink-0 relative z-50 border-b shadow-xs"
       style={{
         backgroundColor: "var(--color-primary)",
         borderBottomColor: "var(--border-overlay-12)",
       }}
     >
-      <div className="max-w-full px-20 mx-auto w-full flex items-center justify-between py-1">
+      <div className="max-w-full px-20 mx-auto w-full flex items-center justify-between py-1 ">
         {/* LEFT SIDE: Market Ticker + Logo + Toggle UI */}
         <div className="flex items-center gap-3 shrink-0 px-2">
 

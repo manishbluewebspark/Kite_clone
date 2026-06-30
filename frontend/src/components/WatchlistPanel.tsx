@@ -3,9 +3,8 @@ import { FiSearch } from "react-icons/fi";
 import { IoAddOutline } from "react-icons/io5";
 import {
   useWatchlistStore,
-  startWatchlistPolling,
-  stopWatchlistPolling,
 } from "../store/useWatchlistStore";
+
 import { useInstrumentListStore } from "../store/useInstrumentListStore";
 import NewGroupModal from "../components/modal/NewGroupModal";
 import ListsPanel from "../components/modal/ListsPanel";
@@ -42,6 +41,8 @@ export default function WatchlistPanel() {
     fetchWatchlist,
     removeStock,
     addStockFromHolding,
+    initLiveQuoteListener,
+    setGroup,
   } = useWatchlistStore();
 
   const {
@@ -81,10 +82,10 @@ export default function WatchlistPanel() {
 
   // ── Effects ──
   useEffect(() => {
+    initLiveQuoteListener();
     fetchWatchlist();
     fetchPage();
-    startWatchlistPolling();
-    return () => stopWatchlistPolling();
+
   }, []);
 
   // Ctrl+K shortcut to focus search
@@ -109,18 +110,18 @@ export default function WatchlistPanel() {
   // };
 
   const handleSearchChange = (val: string) => {
-  setSearchQuery(val);
+    setSearchQuery(val);
 
-  // ⬅️ 1 char pe bhi search mode active karo (pehle > 0 tha jo empty string pe false tha)
-  setIsSearching(val.length > 0);
+    // ⬅️ 1 char pe bhi search mode active karo (pehle > 0 tha jo empty string pe false tha)
+    setIsSearching(val.length > 0);
 
-  if (val.length > 0) {
-    setQuery(val);
-  } else {
-    // Search clear hone par results bhi clear karo
-    setQuery("");
-  }
-};
+    if (val.length > 0) {
+      setQuery(val);
+    } else {
+      // Search clear hone par results bhi clear karo
+      setQuery("");
+    }
+  };
 
   const handleSearchBlur = () => {
     if (!searchQuery.trim()) {
@@ -180,21 +181,21 @@ export default function WatchlistPanel() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  const handleClickOutside = (e: MouseEvent) => {
-    if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-      setIsSearching(false);
-      setSearchQuery("");
-      setQuery("");
-    }
-  };
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setIsSearching(false);
+        setSearchQuery("");
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
-    ref={panelRef} 
+      ref={panelRef}
       className="flex flex-col border-r shrink-0 relative overflow-hidden"
       style={{
         width: "425px",
@@ -284,15 +285,15 @@ export default function WatchlistPanel() {
           onPagePrev={() => setPage(page - 1)}
           page={page}
           totalPages={totalPages}
-          onBuy={(_row) => {}}
-          onSell={(_row) => {}}
-          onChart={(_row) => {}}
-          onInfo={(_row) => {}}
-            onClose={() => {
-    setIsSearching(false);
-    setSearchQuery("");
-    setQuery("");
-  }}
+          onBuy={(_row) => { }}
+          onSell={(_row) => { }}
+          onChart={(_row) => { }}
+          onInfo={(_row) => { }}
+          onClose={() => {
+            setIsSearching(false);
+            setSearchQuery("");
+            setQuery("");
+          }}
         />
       ) : (
         /* ══════════════════════════════════════════════════════════════
@@ -363,6 +364,7 @@ export default function WatchlistPanel() {
         activeTabId={activeTabId}
         onSwitch={(id: number) => {
           setActiveTabId(id);
+          setGroup(id);
           setExpandedStockId(null);
         }}
         onLayersClick={() => setShowListsPanel(true)}
@@ -375,6 +377,7 @@ export default function WatchlistPanel() {
         activeTabId={activeTabId}
         onSelectTab={(id: number) => {
           setActiveTabId(id);
+          setGroup(id);
           setShowListsPanel(false);
           setExpandedStockId(null);
         }}

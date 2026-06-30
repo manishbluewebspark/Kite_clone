@@ -243,6 +243,7 @@
 import express from "express";
 import { fetchIndicesData } from "../services/marketBroadcast.js";
 import { getSmartApi } from "../services/angelSession.js";
+import { fetchQuotesBatch, getGatewayStatus } from "../services/marketDataGateway.js";
 
 const router = express.Router();
 
@@ -259,14 +260,15 @@ router.get("/indices", async (req, res) => {
 // ── POST /api/market/quotes ───────────────────────────────────────────────────
 // Body: { tokens: [{ exchange: "NSE", token: "2885" }] }
 //
-// FIX: F&O instruments (NFO/BFO options, futures) ke liye Angel One ka OHLC
-// mode aksar empty/zero response deta hai. LTP mode F&O ke liye zyada
-// reliable hai. Strategy:
-//   1. Pehle LTP mode try karo — sabse reliable, sab segments pe kaam karta hai
-//   2. Agar OHLC data chahiye (open/high/low/prevClose ke liye), to LTP ke
-//      response se hi prevClose-based change nikalo, ya OHLC alag se try karo
-//      aur fetched/unfetched dono ko merge karo
-//   3. Jo tokens fetched mein nahi aaye unke liye bhi 0 ki jagah LTP se fallback
+// FIX (production): Ab is route mein direct smartApi.marketData() call NAHI
+// hota — saari calls marketDataGateway ke through jaati hain jo:
+//   - Rate-limit enforce karta hai (max ~2.8 req/sec, Angel One ki 9/sec
+//     limit se kaafi neeche, safe margin ke saath)
+//   - Multiple simultaneous callers (watchlist + demo-trade + bulk-ltp) ko
+//     automatically batch kar deta hai ek hi Angel One call mein
+//   - Circuit breaker: agar 403 mile to 60s tak fail-fast karta hai
+//   - 900ms cache: same token baar baar maangne par fresh Angel One call
+//     nahi jaati
 // ──────────────────────────────────────────────────────────────────────────────
 router.post("/quotes", async (req, res) => {
   const { tokens } = req.body;
@@ -276,85 +278,15 @@ router.post("/quotes", async (req, res) => {
   }
 
   try {
-    const smartApi = await getSmartApi();
-
-    const exchangeTokens = {};
-    tokens.forEach(({ exchange, token }) => {
-      if (!exchangeTokens[exchange]) exchangeTokens[exchange] = [];
-      exchangeTokens[exchange].push(token);
-    });
-
-    // ── Step 1: LTP mode — sabse reliable, F&O ke liye bhi kaam karta hai ──
-    const ltpResult = await smartApi.marketData({ mode: "LTP", exchangeTokens });
-
-    if (!ltpResult || ltpResult.status === false) {
-      throw new Error(ltpResult?.message || "marketData LTP failed");
-    }
-
-    // Debug: kitne fetched/unfetched aaye, console mein check karo
-    console.log(
-      `📊 LTP fetch: ${ltpResult.data?.fetched?.length || 0} fetched, ` +
-      `${ltpResult.data?.unfetched?.length || 0} unfetched ` +
-      `(requested: ${tokens.length})`
-    );
-    // ── DEBUG: requested vs fetched tokens compare karo — kaunse miss ho rahe ──
-    const requestedTokens = tokens.map((t) => t.token);
-    const fetchedTokens = (ltpResult.data?.fetched || []).map((d) => d.symbolToken);
-    const missingTokens = requestedTokens.filter((t) => !fetchedTokens.includes(t));
-    if (missingTokens.length) {
-      console.log("⚠️ MISSING tokens (requested but not in fetched/unfetched):", missingTokens);
-      console.log("⚠️ Original tokens array:", JSON.stringify(tokens));
-    }
-    if (ltpResult.data?.unfetched?.length) {
-      console.log("⚠️ Unfetched (API explicitly rejected):", JSON.stringify(ltpResult.data.unfetched));
-    }
-
-    // ── Step 2: OHLC mode bhi try karo — extra fields (open/high/low/close) ke liye
-    // Agar ye fail ho jaaye to ignore karo, LTP data fallback rahega
-    let ohlcMap = {};
-    try {
-      const ohlcResult = await smartApi.marketData({ mode: "OHLC", exchangeTokens });
-      console.log(
-        `📈 OHLC fetch: ${ohlcResult?.data?.fetched?.length || 0} fetched, ` +
-        `status: ${ohlcResult?.status}`
-      );
-      if (ohlcResult && ohlcResult.status !== false) {
-        (ohlcResult.data?.fetched || []).forEach((d) => {
-          ohlcMap[d.symbolToken] = d;
-        });
-        // Debug: ek sample OHLC entry print karo dekhne ke liye kya fields aate hain
-        if (ohlcResult.data?.fetched?.[0]) {
-          console.log("📈 Sample OHLC entry:", JSON.stringify(ohlcResult.data.fetched[0]));
-        }
-      }
-      if (ohlcResult?.data?.unfetched?.length) {
-        console.log("⚠️ OHLC unfetched:", JSON.stringify(ohlcResult.data.unfetched));
-      }
-    } catch (ohlcErr) {
-      console.warn("⚠️ OHLC fetch failed, using LTP-only data:", ohlcErr.message);
-    }
+    const fetchedMap = await fetchQuotesBatch(tokens);
 
     const quotes = {};
-
-    (ltpResult.data?.fetched || []).forEach((d) => {
+    Object.entries(fetchedMap).forEach(([symbolToken, d]) => {
       const ltp = parseFloat(d.ltp || 0);
-
-      // OHLC data agar mila hai to use karo, nahi to LTP response se hi
-      // jo bhi mile (close/prevClose) use karo
-      // FIX: pehle wali line mein operator precedence bug tha —
-      // (a ?? b ?? c ?? d != null ? 0 : 0) hamesha 0 return karta tha
-      // chahe ohlcData mojood ho ya na ho. Ab clean fallback chain hai.
-      const ohlcData = ohlcMap[d.symbolToken];
-      const rawClose =
-        ohlcData?.close ??
-        ohlcData?.prevClose ??
-        d.close ??
-        d.prevClose ??
-        0;
-      const close = parseFloat(rawClose) || 0;
-      const open = parseFloat(ohlcData?.open ?? d.open ?? 0);
-      const dayHigh = parseFloat(ohlcData?.dayHigh ?? ohlcData?.high ?? d.dayHigh ?? 0);
-      const dayLow = parseFloat(ohlcData?.dayLow ?? ohlcData?.low ?? d.dayLow ?? 0);
+      const close = parseFloat(d.close || d.prevClose || 0) || 0;
+      const open = parseFloat(d.open || 0);
+      const dayHigh = parseFloat(d.dayHigh || d.high || 0);
+      const dayLow = parseFloat(d.dayLow || d.low || 0);
 
       let chg = 0;
       let chgPct = 0;
@@ -370,7 +302,7 @@ router.post("/quotes", async (req, res) => {
         isFlat = chg === 0;
       }
 
-      quotes[d.symbolToken] = {
+      quotes[symbolToken] = {
         ltp,
         change: chg,
         changePct: chgPct,
@@ -386,25 +318,15 @@ router.post("/quotes", async (req, res) => {
       };
     });
 
-    // ── Unfetched tokens ke liye bhi entry banao (frontend "0.00" ki jagah
-    // kam se kam pata chale ki data missing hai, blank na rahe) ──────────────
-    (ltpResult.data?.unfetched || []).forEach((u) => {
-      const tok = u.symbolToken || u.token;
-      if (tok && !quotes[tok]) {
-        quotes[tok] = {
-          ltp: 0,
-          change: 0,
-          changePct: 0,
-          isUp: false,
-          isDown: false,
-          isFlat: true,
-          symbol: u.tradingSymbol || "",
-          close: 0,
-          open: 0,
-          dayHigh: 0,
-          dayLow: 0,
-          prevClose: 0,
-          unfetched: true, // frontend isse "Data unavailable" dikha sakta hai
+    // Tokens jo gateway se data nahi mila unke liye bhi placeholder entry —
+    // frontend ko pata chale "data nahi mila", silently 0.00 na dikhe
+    tokens.forEach(({ token }) => {
+      if (!quotes[token]) {
+        quotes[token] = {
+          ltp: 0, change: 0, changePct: 0,
+          isUp: false, isDown: false, isFlat: true,
+          symbol: "", close: 0, open: 0, dayHigh: 0, dayLow: 0, prevClose: 0,
+          unfetched: true,
         };
       }
     });
@@ -412,8 +334,16 @@ router.post("/quotes", async (req, res) => {
     res.json({ success: true, data: quotes, fetchedAt: new Date().toISOString() });
   } catch (err) {
     console.error("❌ Quotes error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    // Circuit breaker active hone par bhi 200-ish response do (graceful degrade)
+    // taaki frontend crash na ho — bas empty/stale quotes milengi
+    res.status(503).json({ success: false, message: err.message, retryable: true });
   }
+});
+
+// ── GET /api/market/gateway-status ────────────────────────────────────────────
+// Debug/monitoring endpoint — production mein health check ke liye useful
+router.get("/gateway-status", async (req, res) => {
+  res.json({ success: true, data: getGatewayStatus() });
 });
 
 // ── GET /api/market/holdings ──────────────────────────────────────────────────
