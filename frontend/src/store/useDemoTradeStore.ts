@@ -128,48 +128,53 @@ export const useDemoTradeStore = create<DemoTradeState>((set, get) => ({
     //     }
     // },
 
-    fetchPositions: async (status) => {
-        set({ loading: true, error: null });
-        try {
-            const { data } = await axiosInstance.get("/demo-trades/positions", {
-                params: status ? { status } : {},
-            });
-            if (data.success) {
-                set({ positions: data.data, loading: false });
-
-                // ✅ Saare open positions ke tokens subscribe karo
-                const openTokens = data.data
-                    .filter((p: DemoPosition) => p.status === "OPEN")
-                    .map((p: DemoPosition) => ({ token: p.token, exchange: p.exchange }));
-
-                if (openTokens.length > 0) {
-                    socket.emit("demo:subscribe", { tokens: openTokens });
-                }
-
-            }
-        } catch (err: any) {
-            set({ loading: false, error: err.response?.data?.message || err.message });
-        }
-    },
-
-    // ── Fetch both simultaneously (initial load) ──────────────────────────────
-    // fetchAll: async () => {
-    //     set({ loading: true, error: null });
+    // fetchPositions: async (status) => {
+    //     set({ error: null });
     //     try {
-    //         const [ordersRes, positionsRes] = await Promise.all([
-    //             axiosInstance.get("/demo-trades/orders"),
-    //             axiosInstance.get("/demo-trades/positions"),
-    //         ]);
-    //         set({
-    //             orders: ordersRes.data.success ? ordersRes.data.data : [],
-    //             positions: positionsRes.data.success ? positionsRes.data.data : [],
-    //             loading: false,
+    //         const { data } = await axiosInstance.get("/demo-trades/positions", {
+    //             params: status ? { status } : {},
     //         });
+    //         if (data.success) {
+    //             set({ positions: data.data });
+
+    //             // ✅ Saare open positions ke tokens subscribe karo
+    //             const openTokens = data.data
+    //                 .filter((p: DemoPosition) => p.status === "OPEN")
+    //                 .map((p: DemoPosition) => ({ token: p.token, exchange: p.exchange }));
+
+    //             if (openTokens.length > 0) {
+    //                 socket.emit("demo:subscribe", { tokens: openTokens });
+    //             }
+
+    //         }
     //     } catch (err: any) {
     //         set({ loading: false, error: err.response?.data?.message || err.message });
     //     }
     // },
 
+
+    fetchPositions: async (status) => {
+        set({ error: null });
+        try {
+            const { data } = await axiosInstance.get("/demo-trades/positions", {
+                params: status ? { status } : {},
+            });
+            if (data.success) {
+                const prevTokens = new Set(get().positions.map((p) => p.token));
+                set({ positions: data.data });
+
+                const newOpenTokens = data.data
+                    .filter((p: DemoPosition) => p.status === "OPEN" && !prevTokens.has(p.token))
+                    .map((p: DemoPosition) => ({ token: p.token, exchange: p.exchange }));
+
+                if (newOpenTokens.length > 0) {
+                    socket.emit("demo:subscribe", { tokens: newOpenTokens });
+                }
+            }
+        } catch (err: any) {
+            set({ error: err.response?.data?.message || err.message });
+        }
+    },
     fetchAll: async () => {
         set({ loading: true, error: null });
         try {

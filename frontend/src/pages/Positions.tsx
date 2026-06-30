@@ -426,6 +426,7 @@ export default function Positions() {
     fetchPositions,
     initLiveQuoteListener,
     placeOrder,
+    orders, 
   } = useDemoTradeStore();
 
   const [historyCollapsed, setHistoryCollapsed] = useState(true);
@@ -660,7 +661,9 @@ export default function Positions() {
         )}
       </div>
 
-      <Breakdown rows={breakdown} />
+      <Breakdown rows={breakdown}   />
+
+      {/* <Breakdown rows={breakdown} sizeBy="value" /> */}
     </div>
   );
 }
