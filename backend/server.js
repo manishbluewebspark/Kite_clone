@@ -1,140 +1,17 @@
-// import express from "express";
-// import http from "http";
-// import dotenv from "dotenv";
-// import cors from "cors";
-// import cookieParser from "cookie-parser";
-// import { Server } from "socket.io";
-
-// import { connectDB } from "./config/db.js";
-// import { angelLogin } from "./services/angelSession.js";
-// import { loadInstruments } from "./services/instrumentService.js";
-// import { setIO } from "./socket.js";
-
-// import apiRoutes from "./routes/index.js";
-// import { startAngelTokenRefreshJob } from "./cron/angelTokenRefresh.js";
-// import { startAngelMarketSocket, subscribeInstrument } from "./services/angelMarketSocket.js";
-// import { getExchangeType } from "./utils/exchangeMap.js";
-// import DemoTrade from "./models/DemoTrade.js";
-
-
-
-// dotenv.config();
-
-// // 🛡️ Production safety net — library ke internal bugs se poora server crash na ho
-// process.on('uncaughtException', (err) => {
-//   console.error('🔴 Uncaught Exception:', err.message);
-// });
-
-// process.on('unhandledRejection', (reason) => {
-//   console.error('🔴 Unhandled Rejection:', reason);
-// });
-
-// const app = express();
-// const server = http.createServer(app);
-
-// const io = new Server(server, {
-//   cors: { origin: process.env.FRONTEND_URL, credentials: true },
-// });
-
-// setIO(io);
-// app.set("io", io);
-
-// io.on("connection", (socket) => {
-//   console.log("🔌 Client connected:", socket.id);
-//   socket.on("disconnect", () => console.log("🔌 Client disconnected:", socket.id));
-// });
-
-// app.use(express.json());
-// app.use(cookieParser());
-// app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
-
-// app.use("/api", apiRoutes);
-
-// // 🔧 Helper: timeout ke saath kisi bhi async step ko wrap karo,
-// // taaki ek atka hua step poore server ko hang na kar de.
-// function withTimeout(promise, ms, label) {
-//   return Promise.race([
-//     promise,
-//     new Promise((_, reject) =>
-//       setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-//     ),
-//   ]);
-// }
-
-// // 🔁 Open demo trades ko market socket se re-subscribe karo
-// async function resubscribeOpenTrades() {
-//   const openTrades = await DemoTrade.findAll({ where: { status: "OPEN" } });
-
-//   const uniqueTokens = new Map();
-//   openTrades.forEach((t) => uniqueTokens.set(t.token, t.exchange));
-
-//   let subscribed = 0;
-//   for (const [token, exchange] of uniqueTokens) {
-//     try {
-//       const exchangeType = getExchangeType(exchange);
-//       subscribeInstrument(token, exchangeType);
-//       subscribed += 1;
-//     } catch (err) {
-//       console.error(`Resubscribe failed for ${token}:`, err.message);
-//     }
-//   }
-//   console.log(`📡 Re-subscribed ${subscribed}/${uniqueTokens.size} open demo-trade instruments`);
-// }
-
-// // 🚀 Market-data pipeline (Angel One login + socket + cron + resubscribe).
-// // Yeh saare steps "nice to have" hain — agar yeh fail/hang ho, server APIs
-// // phir bhi serve karte rahein. Isliye yeh non-blocking background task hai.
-// async function initMarketData() {
-//   try {
-//     await angelLogin();
-//   } catch (err) {
-//     console.error("⚠️  Angel One initial login failed:", err.message);
-//     return;
-//   }
-
-//   startAngelTokenRefreshJob();
-
-//   try {
-//     await loadInstruments();
-//     await withTimeout(startAngelMarketSocket(), 15_000, "startAngelMarketSocket");
-//     await resubscribeOpenTrades();
-//   } catch (err) {
-//     console.error("⚠️  Market-data pipeline failed:", err.message);
-//   }
-// }
-
-// const startServer = async () => {
-//   try {
-//     await connectDB();
-//     server.listen(process.env.PORT, () => {
-//       console.log(`🚀 Server running on port ${process.env.PORT}`);
-//     });
-//     // Market-data setup background mein — server start ko block nahi karega
-//     initMarketData();
-//   } catch (error) {
-//     console.error("❌ Server start failed:", error);
-//     process.exit(1);
-//   }
-// };
-
-// startServer();
-
-
-
 import express from "express";
 import http from "http";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
-
+import cron from "node-cron";
 import { connectDB } from "./config/db.js";
 import { angelLogin } from "./services/angelSession.js";
 import { setIO } from "./socket.js";
 
 import apiRoutes from "./routes/index.js";
 import kiteAuthRoutes from "./routes/kiteAuthRoutes.js";
-
+import { autoSquareOffAllUsers } from "./services/squareOffService.js";
 import { startAngelTokenRefreshJob } from "./cron/angelTokenRefresh.js";
 import { startAngelMarketSocket, subscribeInstrument } from "./services/angelMarketSocket.js";
 import { getExchangeType } from "./utils/exchangeMap.js";
@@ -142,18 +19,19 @@ import { getExchangeType } from "./utils/exchangeMap.js";
 import { loadInstruments } from "./services/instrumentService.js";
 import DemoTrade from "./models/DemoOrder.js";
 import DemoPosition from "./models/DemoPosition.js";
-
+import { isPastMarketClose } from "./utils/marketTiming.js";
 import { subscribeKiteToken } from "./services/kiteTickerService.js";
 
 dotenv.config();
 
-// ── Production safety net ─────────────────────────────────────────────────────
+// server.js — sabse upar
 process.on("uncaughtException", (err) => {
-  console.error("🔴 Uncaught Exception:", err.message);
+  console.error("🔴 Uncaught Exception (handled, server alive):", err.message);
+  // Yahan crash mat hone do — sirf log karo
 });
 
 process.on("unhandledRejection", (reason) => {
-  console.error("🔴 Unhandled Rejection:", reason);
+  console.error("🔴 Unhandled Rejection (handled, server alive):", reason);
 });
 
 const app = express();
@@ -334,17 +212,30 @@ async function initMarketData() {
   await resubscribeOpenTrades();
 }
 
+
+
+// Har weekday 3:30 PM IST = 10:00 AM UTC
+cron.schedule("0 10 * * 1-5", async () => {
+  console.log("⏰ Market close — running auto square-off...");
+  await autoSquareOffAllUsers();
+}, { timezone: "Asia/Kolkata" });
+
+
 // ── Server start ──────────────────────────────────────────────────────────────
 const startServer = async () => {
   try {
     await connectDB();
     console.log("✅ DB Connected");
 
+    // ✅ Ab DB ready hai, safe hai
+    if (isPastMarketClose()) {
+      await autoSquareOffAllUsers();
+    }
+
     server.listen(process.env.PORT, () => {
       console.log(`🚀 Server running on port ${process.env.PORT}`);
     });
 
-    // Market data background me — server start block nahi hoga
     initMarketData();
   } catch (error) {
     console.error("❌ Server start failed:", error);

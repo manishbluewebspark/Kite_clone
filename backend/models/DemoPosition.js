@@ -36,6 +36,7 @@ const DemoPosition = sequelize.define("DemoPosition", {
   status: { type: DataTypes.ENUM("OPEN", "CLOSED"), defaultValue: "OPEN" },
 
   closed_at: { type: DataTypes.DATE, allowNull: true },
+  auto_squared_off: { type: DataTypes.BOOLEAN, defaultValue: false },
 }, {
   tableName: "demo_positions",
   timestamps: true,

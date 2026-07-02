@@ -351,6 +351,8 @@ router.post("/order", authMiddleware, async (req, res) => {
       status: "COMPLETE",
     });
 
+    const { start, end } = getTodayRangeUTC();
+
     let position = await DemoPosition.findOne({
       where: {
         user_id: req.user.id,
@@ -358,6 +360,7 @@ router.post("/order", authMiddleware, async (req, res) => {
         exchange,
         product: product.toUpperCase(),
         status: "OPEN", // sirf aaj ki open position match karo, purani closed wali nahi
+        created_at: { [Op.between]: [start, end] },
       },
     });
 
