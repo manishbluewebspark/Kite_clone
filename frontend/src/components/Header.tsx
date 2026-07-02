@@ -195,7 +195,7 @@ export default function Header() {
                 className={({ isActive }) =>
                   `whitespace-nowrap px-3 py-1.5 rounded-lg text-[12px] transition-all duration-150 no-underline  ${
                     isActive
-                      ? "text-[var(--color-accent)]"
+                      ? "text-(--color-accent)"
                       : "text-gray-500 hover:text-[#FF5A1F]"
                   }`
                 }
@@ -210,7 +210,7 @@ export default function Header() {
             style={{ backgroundColor: "var(--border-overlay-20)" }}
           />
 
-          <div className="flex items-center relative z-[9999]">
+          <div className="flex items-center relative z-9999">
             <button className="relative rounded-lg p-2 transition-colors hover:text-[#FF5A1F]">
               <BsCart2 className="text-sm" />
             </button>

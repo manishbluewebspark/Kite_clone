@@ -190,15 +190,15 @@ export default function StockRow({
             onClick={(e) => e.stopPropagation()}
           >
             <ActionButton
-              color="#3b7ddd"
+              color="#4584F5"
               label="B"
-              className="rounded-xs"
+              className="rounded-sm cursor-pointer"
               onClick={() => setOrderMode("buy")}
             />
             <ActionButton
-              color="#f0532e"
+              color="#FF551F"
               label="S"
-              className="rounded-xs"
+              className="rounded-sm cursor-pointer"
               onClick={() => setOrderMode("sell")}
             />
             <ActionButton
@@ -231,7 +231,7 @@ export default function StockRow({
         {/* Order modal */}
         {orderMode && (
           <div
-            className="absolute right-0 top-full z-[200] mt-1"
+            className="absolute right-0 top-full z-200 mt-1"
             onClick={(e) => e.stopPropagation()}
           >
             <OrderModal
